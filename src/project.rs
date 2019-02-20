@@ -18,7 +18,7 @@ where
 
 impl<'c, 'o> Project<'c, 'o> {
     pub fn with_config(cfg: &'c Config<'o>) -> CliResult<Self> {
-        Ok(Project { cfg: cfg })
+        Ok(Project { cfg })
     }
 
     pub fn graph(mut self) -> CliResult<DepGraph<'c, 'o>> {
@@ -186,14 +186,11 @@ impl<'c, 'o> Project<'c, 'o> {
             }
         }
 
-        debugln!("return=parse_lock_file; self={:#?}", self);
-        debugln!("return=parse_lock_file; dg={:#?}", dg);
         Ok(dg)
     }
 
     /// Builds a list of the dependencies declared in the manifest file.
     pub fn parse_root_deps(&mut self) -> CliResult<(Vec<DeclaredDep>, String, String)> {
-        debugln!("executing; parse_root_deps;");
         let manifest_path = util::find_manifest_file(self.cfg.manifest_file)?;
         let manifest_toml = util::toml_from_file(manifest_path)?;
 
@@ -222,7 +219,7 @@ impl<'c, 'o> Project<'c, 'o> {
 
         if let Some(table) = manifest_toml.get("dependencies") {
             if let Some(table) = table.as_table() {
-                for (name, dep_table) in table.into_iter() {
+                for (name, dep_table) in table.iter() {
                     if let Some(&Value::Boolean(true)) = dep_table.get("optional") {
                         declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Optional));
                     } else {
@@ -235,16 +232,13 @@ impl<'c, 'o> Project<'c, 'o> {
 
         if let Some(table) = manifest_toml.get("dev-dependencies") {
             if let Some(table) = table.as_table() {
-                for (name, _) in table.into_iter() {
+                for (name, _) in table.iter() {
                     declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Dev));
                     v.push(name.clone());
                 }
             }
         }
 
-        debugln!("return=parse_root_deps; self={:#?}", self);
-        debugln!("return=parse_root_deps; declared_deps={:#?}", declared_deps);
-        debugln!("return=parse_root_deps; root_name={:#?}", root_name);
         Ok((declared_deps, root_name, root_version))
     }
 }

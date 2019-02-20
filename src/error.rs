@@ -37,7 +37,7 @@ impl From<CliErrorKind> for CliError {
     fn from(kind: CliErrorKind) -> Self {
         CliError {
             error: format!("{} {}", Format::Error("error:"), kind.description()),
-            kind: kind,
+            kind,
         }
     }
 }
@@ -52,24 +52,10 @@ pub struct CliError {
 
 // Copies clog::error::Error;
 impl CliError {
-    /// Return whether this was a fatal error or not.
-    pub fn use_stderr(&self) -> bool {
-        // For now all errors are fatal
-        true
-    }
-
     /// Print this error and immediately exit the program.
-    ///
-    /// If the error is non-fatal then the error is printed to stdout and the
-    /// exit status will be `0`. Otherwise, when the error is fatal, the error
-    /// is printed to stderr and the exit status will be `1`.
     pub fn exit(&self) -> ! {
-        if self.use_stderr() {
-            wlnerr!("{}", self);
-            ::std::process::exit(1)
-        }
-        println!("{}", self);
-        ::std::process::exit(0)
+        eprintln!("{}", self);
+        ::std::process::exit(1)
     }
 }
 

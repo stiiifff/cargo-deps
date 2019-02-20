@@ -1,4 +1,3 @@
-use std::ascii::AsciiExt;
 use std::fmt;
 
 use clap::ArgMatches;
@@ -29,8 +28,8 @@ arg_enum! {
 }
 
 impl DotLineShape {
-    fn write(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+    fn write(self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
             DotLineShape::Solid => Ok(()),
             DotLineShape::Dotted => write!(f, ",style=dotted"),
             DotLineShape::Dashed => write!(f, ",style=dashed"),
@@ -53,8 +52,8 @@ arg_enum! {
 }
 
 impl DotColor {
-    fn write(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+    fn write(self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
             DotColor::Blue => write!(f, ",color=blue"),
             DotColor::Green => write!(f, ",color=green"),
             DotColor::Red => write!(f, ",color=red"),
@@ -78,8 +77,8 @@ arg_enum! {
 }
 
 impl DotShape {
-    fn write(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+    fn write(self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
             DotShape::Round => Ok(()),
             DotShape::Box => write!(f, ",shape=box"),
             DotShape::Diamond => write!(f, ",shape=diamond"),

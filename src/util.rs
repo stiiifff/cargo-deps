@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 use toml::{self, Value};
 
 pub fn toml_from_file<P: AsRef<Path>>(p: P) -> CliResult<Value> {
-    debugln!("executing; from_file; file={:?}", p.as_ref());
     let mut f = File::open(p.as_ref())?;
 
     let mut s = String::new();

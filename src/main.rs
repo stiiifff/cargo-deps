@@ -227,8 +227,6 @@ use crate::config::Config;
 use crate::error::CliResult;
 use crate::project::Project;
 
-#[macro_use]
-mod macros;
 mod config;
 mod dep;
 mod error;
@@ -305,12 +303,10 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
 }
 
 fn main() {
-    debugln!("parsing cli...");
     let m = parse_cli();
 
     if let Some(m) = m.subcommand_matches("graph") {
         let cfg = Config::from_matches(m).unwrap_or_else(|e| e.exit());
-        debugln!("cfg={:#?}", cfg);
         execute(cfg).map_err(|e| e.exit()).unwrap();
     }
 }
@@ -335,7 +331,7 @@ fn execute(cfg: Config) -> CliResult<()> {
 
 fn is_file(s: String) -> Result<(), String> {
     let p = Path::new(&*s);
-    if let None = p.file_name() {
+    if p.file_name().is_none() {
         return Err(format!("'{}' doesn't appear to be a valid file name", &*s));
     }
     Ok(())
