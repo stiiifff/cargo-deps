@@ -2,7 +2,9 @@
 
 [![](https://img.shields.io/crates/v/cargo-deps.svg)](https://crates.io/crates/cargo-deps) [![Documentation](https://docs.rs/cargo-deps/badge.svg)](https://docs.rs/cargo-deps) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![LoC](https://tokei.rs/b1/github/m-cat/cargo-deps)](https://github.com/m-cat/cargo-deps)
 
-A `cargo` subcommand for building GraphViz DOT files of dependency graphs. This subcommand was originally based off and inspired by the project [cargo-dot](https://github.com/maxsnew/cargo-dot) by [Max New](https://github.com/maxsnew)
+Cargo subcommand for building dependency graphs of Rust projects.
+
+This project is a fork of the unmaintained [cargo-graph](https://github.com/kbknapp/cargo-graph).
 
 ## Demo
 

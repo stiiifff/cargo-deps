@@ -5,7 +5,7 @@ authors = [
     "Marcin S. <marcin.swieczkowski@gmail.com>",
 ]
 categories = ["development-tools", "development-tools::cargo-plugins"]
-description = "Cargo subcommand for building GraphViz DOT files of dependency graphs"
+description = "Cargo subcommand for building dependency graphs of Rust projects."
 exclude = ["*.png"]
 keywords = ["cargo", "subcommand", "deps", "dot", "graphviz"]
 license = "MIT"
