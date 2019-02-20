@@ -316,8 +316,8 @@ fn main() {
 }
 
 fn execute(cfg: Config) -> CliResult<()> {
-    let project = r#try!(Project::with_config(&cfg));
-    let graph = r#try!(project.graph());
+    let project = Project::with_config(&cfg)?;
+    let graph = project.graph()?;
 
     match cfg.dot_file {
         None => {

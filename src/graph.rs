@@ -227,16 +227,16 @@ impl<'c, 'o> DepGraph<'c, 'o> {
         self.remove_orphans();
         self.remove_self_pointing();
         debugln!("dg={:#?}", self);
-        r#try!(writeln!(output, "{}", "digraph dependencies {"));
+        writeln!(output, "{}", "digraph dependencies {")?;
         for (i, dep) in self.nodes.iter().enumerate() {
-            r#try!(write!(output, "\tN{}", i));
-            r#try!(dep.label(output, self.cfg));
+            write!(output, "\tN{}", i)?;
+            dep.label(output, self.cfg)?;
         }
         for ed in &self.edges {
-            r#try!(write!(output, "\t{}", ed));
-            r#try!(ed.label(output, &self));
+            write!(output, "\t{}", ed)?;
+            ed.label(output, &self)?;
         }
-        r#try!(writeln!(output, "{}", "}"));
+        writeln!(output, "{}", "}")?;
         Ok(())
     }
 }

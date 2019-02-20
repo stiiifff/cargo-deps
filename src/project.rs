@@ -22,8 +22,8 @@ impl<'c, 'o> Project<'c, 'o> {
     }
 
     pub fn graph(mut self) -> CliResult<DepGraph<'c, 'o>> {
-        let (root_deps, root_name, root_version) = r#try!(self.parse_root_deps());
-        let mut dg = r#try!(self.parse_lock_file());
+        let (root_deps, root_name, root_version) = self.parse_root_deps()?;
+        let mut dg = self.parse_lock_file()?;
         if !dg.set_root(&root_name, &root_version) {
             return Err(From::from(CliErrorKind::TomlNoName));
         }
@@ -171,8 +171,8 @@ impl<'c, 'o> Project<'c, 'o> {
             }
         }
 
-        let lock_path = r#try!(util::find_manifest_file(self.cfg.lock_file));
-        let lock_toml = r#try!(util::toml_from_file(lock_path));
+        let lock_path = util::find_manifest_file(self.cfg.lock_file)?;
+        let lock_toml = util::toml_from_file(lock_path)?;
 
         let mut dg = DepGraph::new(self.cfg);
 
@@ -194,8 +194,8 @@ impl<'c, 'o> Project<'c, 'o> {
     /// Builds a list of the dependencies declared in the manifest file.
     pub fn parse_root_deps(&mut self) -> CliResult<(Vec<DeclaredDep>, String, String)> {
         debugln!("executing; parse_root_deps;");
-        let manifest_path = r#try!(util::find_manifest_file(self.cfg.manifest_file));
-        let manifest_toml = r#try!(util::toml_from_file(manifest_path));
+        let manifest_path = util::find_manifest_file(self.cfg.manifest_file)?;
+        let manifest_toml = util::toml_from_file(manifest_path)?;
 
         let mut declared_deps = vec![];
         let mut v = vec![];
