@@ -1,6 +1,6 @@
 # cargo-deps
 
-[![](https://img.shields.io/crates/v/cargo-deps.svg)](https://crates.io/crates/cargo-deps) [![Documentation](https://docs.rs/cargo-deps/badge.svg)](https://docs.rs/cargo-deps) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![LoC](https://tokei.rs/b1/github/m-cat/cargo-deps)](https://github.com/m-cat/cargo-deps)
+[![](https://img.shields.io/crates/v/cargo-deps.svg)](https://crates.io/crates/cargo-deps) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![LoC](https://tokei.rs/b1/github/m-cat/cargo-deps)](https://github.com/m-cat/cargo-deps)
 
 Cargo subcommand for building dependency graphs of Rust projects.
 
@@ -73,7 +73,7 @@ cargo install cargo-deps
 
 ## Options
 
-Runs `cargo deps -h` to see all the available options.
+Run `cargo deps -h` to see all the available options.
 
 ## License
 
