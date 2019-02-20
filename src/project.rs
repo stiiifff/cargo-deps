@@ -141,7 +141,7 @@ impl<'c, 'o> Project<'c, 'o> {
     fn parse_lock_file(&mut self) -> CliResult<DepGraph<'c, 'o>> {
         fn parse_package<'c, 'o>(dg: &mut DepGraph<'c, 'o>, pkg: &Value) {
             let name = pkg
-                .lookup("name")
+                .get("name")
                 .expect("no 'name' field in Cargo.lock [package] or [root] table")
                 .as_str()
                 .expect(
@@ -150,7 +150,7 @@ impl<'c, 'o> Project<'c, 'o> {
                 )
                 .to_owned();
             let ver = pkg
-                .lookup("version")
+                .get("version")
                 .expect("no 'version' field in Cargo.lock [package] or [root] table")
                 .as_str()
                 .expect(
@@ -161,7 +161,7 @@ impl<'c, 'o> Project<'c, 'o> {
 
             let id = dg.find_or_add(&*name, &*ver);
 
-            if let Some(&Value::Array(ref deps)) = pkg.lookup("dependencies") {
+            if let Some(&Value::Array(ref deps)) = pkg.get("dependencies") {
                 for dep in deps {
                     let dep_vec = dep.as_str().unwrap_or("").split(' ').collect::<Vec<_>>();
                     let dep_string = dep_vec[0].to_owned();
@@ -223,7 +223,7 @@ impl<'c, 'o> Project<'c, 'o> {
         if let Some(table) = manifest_toml.get("dependencies") {
             if let Some(table) = table.as_table() {
                 for (name, dep_table) in table.into_iter() {
-                    if let Some(&Value::Boolean(true)) = dep_table.lookup("optional") {
+                    if let Some(&Value::Boolean(true)) = dep_table.get("optional") {
                         declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Optional));
                     } else {
                         declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Build));

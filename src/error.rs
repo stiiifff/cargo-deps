@@ -95,8 +95,14 @@ impl Error for CliError {
 impl From<io::Error> for CliError {
     fn from(ioe: io::Error) -> Self {
         CliError {
-            error: format!("{} {}", Format::Error("error:"), ioe.description()),
+            error: format!("{} {}", Format::Error("Error:"), ioe.description()),
             kind: CliErrorKind::Io(ioe),
         }
+    }
+}
+
+impl From<toml::ser::Error> for CliError {
+    fn from(err: toml::ser::Error) -> Self {
+        From::from(CliErrorKind::Generic(format!("Could not parse input as TOML: {}", err)))
     }
 }
