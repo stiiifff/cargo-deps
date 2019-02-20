@@ -18,10 +18,7 @@ pub struct DeclaredDep {
 
 impl DeclaredDep {
     pub fn with_kind(name: String, kind: DepKind) -> Self {
-        DeclaredDep {
-            name,
-            kind,
-        }
+        DeclaredDep { name, kind }
     }
 }
 
