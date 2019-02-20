@@ -1,9 +1,9 @@
 use std::fmt;
 
 #[cfg(all(feature = "color", not(target_os = "windows")))]
-use ansi_term::Colour::{Green, Red, Yellow};
-#[cfg(all(feature = "color", not(target_os = "windows")))]
 use ansi_term::ANSIString;
+#[cfg(all(feature = "color", not(target_os = "windows")))]
+use ansi_term::Colour::{Green, Red, Yellow};
 
 #[allow(dead_code)]
 pub enum Format<T> {
@@ -21,7 +21,6 @@ impl<T: AsRef<str>> Format<T> {
             Format::Good(ref e) => Green.paint(e.as_ref()),
         }
     }
-
 }
 
 #[cfg(all(feature = "color", not(target_os = "windows")))]

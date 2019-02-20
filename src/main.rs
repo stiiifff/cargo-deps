@@ -206,14 +206,20 @@
 #![cfg_attr(feature = "lints", allow(should_implement_trait))]
 #![cfg_attr(feature = "lints", allow(unstable_features))]
 #![cfg_attr(feature = "lints", deny(warnings))]
-#![cfg_attr(not(any(feature = "nightly", feature = "unstable")), deny(unstable_features))]
-#![deny(missing_docs,
-        missing_debug_implementations,
-        missing_copy_implementations,
-        trivial_casts, trivial_numeric_casts,
-        unsafe_code,
-        unused_import_braces,
-        unused_qualifications)]
+#![cfg_attr(
+    not(any(feature = "nightly", feature = "unstable")),
+    deny(unstable_features)
+)]
+#![deny(
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unused_import_braces,
+    unused_qualifications
+)]
 
 extern crate toml;
 #[macro_use]
@@ -227,23 +233,24 @@ use std::path::Path;
 
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
-use error::CliResult;
 use config::Config;
+use error::CliResult;
 use project::Project;
 
 #[macro_use]
 mod macros;
-mod error;
-mod graph;
-mod fmt;
-mod project;
-mod dep;
 mod config;
+mod dep;
+mod error;
+mod fmt;
+mod graph;
+mod project;
 mod util;
 
 static LINE_STYLES: [&'static str; 3] = ["solid", "dotted", "dashed"];
-static COLORS: [&'static str; 8] = ["blue", "black", "yellow", "purple", "green", "red", "white",
-                                    "orange"];
+static COLORS: [&'static str; 8] = [
+    "blue", "black", "yellow", "purple", "green", "red", "white", "orange",
+];
 static DEP_SHAPES: [&'static str; 4] = ["box", "round", "diamond", "triangle"];
 
 fn parse_cli<'a>() -> ArgMatches<'a> {
@@ -263,46 +270,46 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
                         ")
                         .args(&[
                             Arg::from_usage("--lock-file [PATH] 'Specify location of .lock file'")
-								.default_value("Cargo.lock")
+                                .default_value("Cargo.lock")
                                 .validator(is_file),
                             Arg::from_usage("--manifest-file [PATH] 'Specify location of manifest file'")
-								.default_value("Cargo.toml")
+                                .default_value("Cargo.toml")
                                 .validator(is_file),
                             Arg::from_usage("--build-line-style [STYLE] 'Line style for build deps'")
-								.default_value("solid")
+                                .default_value("solid")
                                 .possible_values(&LINE_STYLES),
                             Arg::from_usage("--build-line-color [COLOR] 'Line color for regular deps'")
-								.default_value("black")
+                                .default_value("black")
                                 .possible_values(&COLORS),
                             Arg::from_usage("--build-shape [SHAPE] 'Shape for regular deps'")
-								.default_value("round")
+                                .default_value("round")
                                 .possible_values(&DEP_SHAPES),
                             Arg::from_usage("--build-color [COLOR] 'Color for regular deps'")
-								.default_value("black")
+                                .default_value("black")
                                 .possible_values(&COLORS),
                             Arg::from_usage("--optional-line-style [STYLE] 'Line style for optional deps'")
-								.default_value("solid")
+                                .default_value("solid")
                                 .possible_values(&LINE_STYLES),
                             Arg::from_usage("--optional-line-color [COLOR] 'Line color for optional deps'")
-								.default_value("black")
+                                .default_value("black")
                                 .possible_values(&COLORS),
                             Arg::from_usage("--optional-shape [SHAPE] 'Shape for optional deps'")
-								.default_value("round")
+                                .default_value("round")
                                 .possible_values(&DEP_SHAPES),
                             Arg::from_usage("--optional-color [COLOR] 'Color for optional deps'")
-								.default_value("black")
+                                .default_value("black")
                                 .possible_values(&COLORS),
                             Arg::from_usage("--dev-line-style [STYLE] 'Line style for dev deps'")
-								.default_value("solid")
+                                .default_value("solid")
                                 .possible_values(&LINE_STYLES),
                             Arg::from_usage("--dev-line-color [COLOR] 'Line color for dev deps'")
-								.default_value("black")
+                                .default_value("black")
                                 .possible_values(&COLORS),
                             Arg::from_usage("--dev-shape [SHAPE] 'Shape for dev deps'")
-								.default_value("round")
+                                .default_value("round")
                                 .possible_values(&DEP_SHAPES),
                             Arg::from_usage("--dev-color [COLOR] 'Color for dev deps'")
-								.default_value("black")
+                                .default_value("black")
                                 .possible_values(&COLORS)]))
         .get_matches()
 }

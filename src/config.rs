@@ -12,14 +12,8 @@ trait BoolArg {
 impl<'a> BoolArg for &'a str {
     fn parse_arg(&self) -> CliResult<bool> {
         match &*self.to_ascii_lowercase() {
-            "yes" |
-            "true" |
-            "y" |
-            "t" => Ok(true),
-            "no" |
-            "false" |
-            "n" |
-            "f" => Ok(false),
+            "yes" | "true" | "y" | "t" => Ok(true),
+            "no" | "false" | "n" | "f" => Ok(false),
             _ => Err(From::from(CliErrorKind::UnknownBoolArg)),
         }
     }
@@ -44,7 +38,7 @@ impl DotLineShape {
     }
 }
 
-arg_enum!{
+arg_enum! {
     #[derive(Debug, Copy, Clone)]
     pub enum DotColor {
         Blue,
@@ -73,7 +67,7 @@ impl DotColor {
     }
 }
 
-arg_enum!{
+arg_enum! {
     #[derive(Debug, Copy, Clone)]
     pub enum DotShape {
         Box,
@@ -114,7 +108,6 @@ impl fmt::Display for LineStyle {
     }
 }
 
-
 #[derive(Debug)]
 pub struct Config<'a> {
     pub lock_file: &'a str,
@@ -142,30 +135,32 @@ impl<'a> Config<'a> {
             dev_deps: try!(m.value_of("dev-deps").unwrap_or("false").parse_arg()),
             build_deps: try!(m.value_of("build-deps").unwrap_or("true").parse_arg()),
             optional_deps: try!(m.value_of("optional-deps").unwrap_or("true").parse_arg()),
-            build_lines: LineStyle(value_t!(m.value_of("build-line-style"), DotLineShape)
-                                       .unwrap_or(DotLineShape::Solid),
-                                   value_t!(m.value_of("build-line-color"), DotColor)
-                                       .unwrap_or(DotColor::Black)),
-            optional_lines: LineStyle(value_t!(m.value_of("optional-line-style"), DotLineShape)
-                                          .unwrap_or(DotLineShape::Solid),
-                                      value_t!(m.value_of("optional-line-color"), DotColor)
-                                          .unwrap_or(DotColor::Black)),
-            dev_lines: LineStyle(value_t!(m.value_of("dev-line-style"), DotLineShape)
-                                     .unwrap_or(DotLineShape::Solid),
-                                 value_t!(m.value_of("dev-line-color"), DotColor)
-                                     .unwrap_or(DotColor::Black)),
-            build_style: DepStyle(value_t!(m.value_of("build-shape"), DotShape)
-                                      .unwrap_or(DotShape::Round),
-                                  value_t!(m.value_of("build-color"), DotColor)
-                                      .unwrap_or(DotColor::Black)),
-            optional_style: DepStyle(value_t!(m.value_of("optional-shape"), DotShape)
-                                         .unwrap_or(DotShape::Round),
-                                     value_t!(m.value_of("optional-color"), DotColor)
-                                         .unwrap_or(DotColor::Black)),
-            dev_style: DepStyle(value_t!(m.value_of("dev-shape"), DotShape)
-                                    .unwrap_or(DotShape::Round),
-                                value_t!(m.value_of("dev-color"), DotColor)
-                                    .unwrap_or(DotColor::Black)),
+            build_lines: LineStyle(
+                value_t!(m.value_of("build-line-style"), DotLineShape)
+                    .unwrap_or(DotLineShape::Solid),
+                value_t!(m.value_of("build-line-color"), DotColor).unwrap_or(DotColor::Black),
+            ),
+            optional_lines: LineStyle(
+                value_t!(m.value_of("optional-line-style"), DotLineShape)
+                    .unwrap_or(DotLineShape::Solid),
+                value_t!(m.value_of("optional-line-color"), DotColor).unwrap_or(DotColor::Black),
+            ),
+            dev_lines: LineStyle(
+                value_t!(m.value_of("dev-line-style"), DotLineShape).unwrap_or(DotLineShape::Solid),
+                value_t!(m.value_of("dev-line-color"), DotColor).unwrap_or(DotColor::Black),
+            ),
+            build_style: DepStyle(
+                value_t!(m.value_of("build-shape"), DotShape).unwrap_or(DotShape::Round),
+                value_t!(m.value_of("build-color"), DotColor).unwrap_or(DotColor::Black),
+            ),
+            optional_style: DepStyle(
+                value_t!(m.value_of("optional-shape"), DotShape).unwrap_or(DotShape::Round),
+                value_t!(m.value_of("optional-color"), DotColor).unwrap_or(DotColor::Black),
+            ),
+            dev_style: DepStyle(
+                value_t!(m.value_of("dev-shape"), DotShape).unwrap_or(DotShape::Round),
+                value_t!(m.value_of("dev-color"), DotColor).unwrap_or(DotColor::Black),
+            ),
             include_vers: m.is_present("include-versions"),
         })
     }

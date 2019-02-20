@@ -1,7 +1,7 @@
 use std::env;
-use std::path::{Path, PathBuf};
 use std::fs::{self, File};
 use std::io::Read;
+use std::path::{Path, PathBuf};
 
 use toml::{self, Table};
 
@@ -24,16 +24,18 @@ pub fn toml_from_file<P: AsRef<Path>>(p: P) -> CliResult<Box<Table>> {
     for error in parser.errors.iter() {
         let (loline, locol) = parser.to_linecol(error.lo);
         let (hiline, hicol) = parser.to_linecol(error.hi);
-        error_str.push_str(&format!("{:?}:{}:{}{} {}\n",
-                                    f,
-                                    loline + 1,
-                                    locol + 1,
-                                    if loline != hiline || locol != hicol {
-                                        format!("-{}:{}", hiline + 1, hicol + 1)
-                                    } else {
-                                        "".to_owned()
-                                    },
-                                    error.desc));
+        error_str.push_str(&format!(
+            "{:?}:{}:{}{} {}\n",
+            f,
+            loline + 1,
+            locol + 1,
+            if loline != hiline || locol != hicol {
+                format!("-{}:{}", hiline + 1, hicol + 1)
+            } else {
+                "".to_owned()
+            },
+            error.desc
+        ));
     }
     Err(From::from(CliErrorKind::Generic(error_str)))
 }
@@ -57,9 +59,11 @@ pub fn find_manifest_file(file: &str) -> CliResult<PathBuf> {
         pwd = parent.unwrap().to_path_buf();
     }
 
-    Err(From::from(CliErrorKind::Generic(format!("Could not find `{}` in `{}` or any \
-                                                  parent directory, or it isn't a valid \
-                                                  lock-file",
-                                                 file,
-                                                 pwd.display()))))
+    Err(From::from(CliErrorKind::Generic(format!(
+        "Could not find `{}` in `{}` or any \
+         parent directory, or it isn't a valid \
+         lock-file",
+        file,
+        pwd.display()
+    ))))
 }

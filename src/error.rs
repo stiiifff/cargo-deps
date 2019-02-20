@@ -1,6 +1,6 @@
 use std::error::Error;
-use std::fmt::{Display, Formatter};
 use std::fmt::Result as FmtResult;
+use std::fmt::{Display, Formatter};
 use std::io;
 
 use fmt::Format;
@@ -87,7 +87,7 @@ impl Error for CliError {
     fn cause(&self) -> Option<&Error> {
         match self.kind {
             CliErrorKind::Io(ref e) => Some(e),
-            _ => None
+            _ => None,
         }
     }
 }

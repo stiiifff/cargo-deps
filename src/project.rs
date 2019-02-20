@@ -2,15 +2,16 @@ use std::collections::HashMap;
 
 use toml::Value;
 
-use dep::{DeclaredDep, DepKind};
-use graph::DepGraph;
-use error::{CliErrorKind, CliResult};
 use config::Config;
+use dep::{DeclaredDep, DepKind};
+use error::{CliErrorKind, CliResult};
+use graph::DepGraph;
 use util;
 
 #[derive(Debug)]
 pub struct Project<'c, 'o>
-    where 'o: 'c
+where
+    'o: 'c,
 {
     cfg: &'c Config<'o>,
 }
@@ -43,21 +44,31 @@ impl<'c, 'o> Project<'c, 'o> {
             deps.iter().map(|dep| dep.0).collect::<Vec<_>>()
         };
 
-        for (i, &dep_id_i) in dep_ids_sorted_by_name.iter().enumerate().take(dep_ids_sorted_by_name.len() - 1) {
+        for (i, &dep_id_i) in dep_ids_sorted_by_name
+            .iter()
+            .enumerate()
+            .take(dep_ids_sorted_by_name.len() - 1)
+        {
             // Find other nodes with the same name
             // We need to iterate one more time after the last node to handle the break.
-            for (j, &dep) in dep_ids_sorted_by_name.iter().enumerate().take(dep_ids_sorted_by_name.len() + 1).skip(i + 1) {
+            for (j, &dep) in dep_ids_sorted_by_name
+                .iter()
+                .enumerate()
+                .take(dep_ids_sorted_by_name.len() + 1)
+                .skip(i + 1)
+            {
                 // Stop once we've found a node with a different name
                 // or reached the end of the list.
-                if j >= dep_ids_sorted_by_name.len() ||
-                   dg.nodes[dep_id_i].name != dg.nodes[dep].name {
+                if j >= dep_ids_sorted_by_name.len()
+                    || dg.nodes[dep_id_i].name != dg.nodes[dep].name
+                {
                     // If there are at least two nodes with the same name
                     if j >= i + 2 {
                         // Set force_write_ver = true on all nodes
                         // from dep_ids_sorted_by_name[i] to dep_ids_sorted_by_name[j - 1].
                         // Remember: j is pointing on the next node with a *different* name!
                         // Remember also: i..j includes i but excludes j.
-						for &dep_id_k in dep_ids_sorted_by_name.iter().take(j).skip(i) {
+                        for &dep_id_k in dep_ids_sorted_by_name.iter().take(j).skip(i) {
                             dg.nodes[dep_id_k].force_write_ver = true;
                         }
                     }
@@ -71,8 +82,10 @@ impl<'c, 'o> Project<'c, 'o> {
     /// Sets the kind of dependency on each dependency
     /// based on how the dependencies are declared in the manifest.
     fn set_resolved_kind(&mut self, declared_deps: &[DeclaredDep], dg: &mut DepGraph<'c, 'o>) {
-        let declared_deps_map =
-            declared_deps.iter().map(|dd| (&*dd.name, dd.kind)).collect::<HashMap<_, _>>();
+        let declared_deps_map = declared_deps
+            .iter()
+            .map(|dd| (&*dd.name, dd.kind))
+            .collect::<HashMap<_, _>>();
 
         dg.nodes[0].is_build = true;
 
@@ -113,9 +126,10 @@ impl<'c, 'o> Project<'c, 'o> {
         // Start at 1 to keep the root node.
         for id in (1..dg.nodes.len()).rev() {
             let kind = dg.nodes[id].kind();
-            if (kind == DepKind::Build && !self.cfg.build_deps) ||
-               (kind == DepKind::Dev && !self.cfg.dev_deps) ||
-               (kind == DepKind::Optional && !self.cfg.optional_deps) {
+            if (kind == DepKind::Build && !self.cfg.build_deps)
+                || (kind == DepKind::Dev && !self.cfg.dev_deps)
+                || (kind == DepKind::Optional && !self.cfg.optional_deps)
+            {
                 dg.remove(id);
             }
         }
@@ -126,18 +140,24 @@ impl<'c, 'o> Project<'c, 'o> {
     /// Builds a graph of the resolved dependencies declared in the lock file.
     fn parse_lock_file(&mut self) -> CliResult<DepGraph<'c, 'o>> {
         fn parse_package<'c, 'o>(dg: &mut DepGraph<'c, 'o>, pkg: &Value) {
-            let name = pkg.lookup("name")
-                          .expect("no 'name' field in Cargo.lock [package] or [root] table")
-                          .as_str()
-                          .expect("'name' field of [package] or [root] table in Cargo.lock was not a \
-                                   valid string")
-                          .to_owned();
-            let ver = pkg.lookup("version")
-                         .expect("no 'version' field in Cargo.lock [package] or [root] table")
-                         .as_str()
-                         .expect("'version' field of [package] or [root] table in Cargo.lock was not a \
-                                  valid string")
-                         .to_owned();
+            let name = pkg
+                .lookup("name")
+                .expect("no 'name' field in Cargo.lock [package] or [root] table")
+                .as_str()
+                .expect(
+                    "'name' field of [package] or [root] table in Cargo.lock was not a \
+                     valid string",
+                )
+                .to_owned();
+            let ver = pkg
+                .lookup("version")
+                .expect("no 'version' field in Cargo.lock [package] or [root] table")
+                .as_str()
+                .expect(
+                    "'version' field of [package] or [root] table in Cargo.lock was not a \
+                     valid string",
+                )
+                .to_owned();
 
             let id = dg.find_or_add(&*name, &*ver);
 

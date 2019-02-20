@@ -12,7 +12,7 @@ pub struct Ed(pub Nd, pub Nd);
 
 impl Ed {
     pub fn label<W: Write>(&self, w: &mut W, dg: &DepGraph) -> io::Result<()> {
-        use dep::DepKind::{Optional, Dev, Build};
+        use dep::DepKind::{Build, Dev, Optional};
         let parent = dg.get(self.0).unwrap().kind();
         let child = dg.get(self.1).unwrap().kind();
 
@@ -26,7 +26,7 @@ impl Ed {
             (Dev, Build) => writeln!(w, "[label=\"\"{}];", dg.cfg.dev_lines),
             (Dev, Dev) => writeln!(w, "[label=\"\"{}];", dg.cfg.dev_lines),
             (Dev, Optional) => writeln!(w, "[label=\"\"{}];", dg.cfg.dev_lines),
-            _               => writeln!(w, "[label=\"\"];")
+            _ => writeln!(w, "[label=\"\"];"),
         }
     }
 }
@@ -40,7 +40,8 @@ impl fmt::Display for Ed {
 
 #[derive(Debug)]
 pub struct DepGraph<'c, 'o>
-    where 'o: 'c
+where
+    'o: 'c,
 {
     pub nodes: Vec<ResolvedDep>,
     pub edges: Vec<Ed>,
@@ -73,7 +74,9 @@ impl<'c, 'o> DepGraph<'c, 'o> {
         debugln!("remove; index={}", id);
         self.nodes.remove(id);
         // Remove edges of the removed node.
-        self.edges = self.edges.iter()
+        self.edges = self
+            .edges
+            .iter()
             .filter(|e| !(e.0 == id || e.1 == id))
             .cloned()
             .collect();
@@ -88,8 +91,12 @@ impl<'c, 'o> DepGraph<'c, 'o> {
         let mut to_upd = vec![];
         for c in id..self.nodes.len() {
             for (eid, &Ed(idl, idr)) in self.edges.iter().enumerate() {
-                if idl == c { to_upd.push((eid, Side::Left, c-1)); }
-                if idr == c { to_upd.push((eid, Side::Right, c-1)); }
+                if idl == c {
+                    to_upd.push((eid, Side::Left, c - 1));
+                }
+                if idr == c {
+                    to_upd.push((eid, Side::Right, c - 1));
+                }
             }
         }
         for (eid, side, new) in to_upd {
@@ -102,7 +109,7 @@ impl<'c, 'o> DepGraph<'c, 'o> {
 
     pub fn remove_orphans(&mut self) {
         let len = self.nodes.len();
-        self.edges.retain(|&Ed(idl,idr)| idl < len && idr < len);
+        self.edges.retain(|&Ed(idl, idr)| idl < len && idr < len);
         debugln!("remove_orphans; nodes={:?}", self.nodes);
         loop {
             let mut removed = false;
@@ -120,7 +127,7 @@ impl<'c, 'o> DepGraph<'c, 'o> {
                     self.nodes.remove(id);
 
                     // Remove edges originating from the removed node
-                    self.edges.retain(|&Ed(origin,_)| origin != id);
+                    self.edges.retain(|&Ed(origin, _)| origin != id);
                     // Adjust edges to match the new node indexes
                     for edge in self.edges.iter_mut() {
                         if edge.0 > id {
@@ -144,7 +151,7 @@ impl<'c, 'o> DepGraph<'c, 'o> {
         loop {
             let mut found = false;
             let mut self_p = vec![false; self.edges.len()];
-            for (eid ,&Ed(idl, idr)) in self.edges.iter().enumerate() {
+            for (eid, &Ed(idl, idr)) in self.edges.iter().enumerate() {
                 if idl == idr {
                     found = true;
                     self_p[eid] = true;
@@ -208,7 +215,8 @@ impl<'c, 'o> DepGraph<'c, 'o> {
         if let Some(i) = self.find(name, ver) {
             return i;
         }
-        self.nodes.push(ResolvedDep::new(name.to_owned(), ver.to_owned()));
+        self.nodes
+            .push(ResolvedDep::new(name.to_owned(), ver.to_owned()));
         self.nodes.len() - 1
     }
 
@@ -231,5 +239,4 @@ impl<'c, 'o> DepGraph<'c, 'o> {
         try!(writeln!(output, "{}", "}"));
         Ok(())
     }
-
 }
