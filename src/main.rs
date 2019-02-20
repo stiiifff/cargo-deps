@@ -223,9 +223,9 @@ use std::path::Path;
 
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
-use config::Config;
-use error::CliResult;
-use project::Project;
+use crate::config::Config;
+use crate::error::CliResult;
+use crate::project::Project;
 
 #[macro_use]
 mod macros;
@@ -316,8 +316,8 @@ fn main() {
 }
 
 fn execute(cfg: Config) -> CliResult<()> {
-    let project = try!(Project::with_config(&cfg));
-    let graph = try!(project.graph());
+    let project = r#try!(Project::with_config(&cfg));
+    let graph = r#try!(project.graph());
 
     match cfg.dot_file {
         None => {

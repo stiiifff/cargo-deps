@@ -3,7 +3,7 @@ use std::fmt;
 
 use clap::ArgMatches;
 
-use error::{CliErrorKind, CliResult};
+use crate::error::{CliErrorKind, CliResult};
 
 trait BoolArg {
     fn parse_arg(&self) -> CliResult<bool>;
@@ -93,7 +93,7 @@ pub struct DepStyle(DotShape, DotColor);
 
 impl fmt::Display for DepStyle {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(self.0.write(f));
+        r#try!(self.0.write(f));
         self.1.write(f)
     }
 }
@@ -103,7 +103,7 @@ pub struct LineStyle(DotLineShape, DotColor);
 
 impl fmt::Display for LineStyle {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(self.0.write(f));
+        r#try!(self.0.write(f));
         self.1.write(f)
     }
 }
@@ -132,9 +132,9 @@ impl<'a> Config<'a> {
             lock_file: m.value_of("lock-file").unwrap_or("Cargo.lock"),
             manifest_file: m.value_of("manifest-file").unwrap_or("Cargo.toml"),
             dot_file: m.value_of("dot-file"),
-            dev_deps: try!(m.value_of("dev-deps").unwrap_or("false").parse_arg()),
-            build_deps: try!(m.value_of("build-deps").unwrap_or("true").parse_arg()),
-            optional_deps: try!(m.value_of("optional-deps").unwrap_or("true").parse_arg()),
+            dev_deps: r#try!(m.value_of("dev-deps").unwrap_or("false").parse_arg()),
+            build_deps: r#try!(m.value_of("build-deps").unwrap_or("true").parse_arg()),
+            optional_deps: r#try!(m.value_of("optional-deps").unwrap_or("true").parse_arg()),
             build_lines: LineStyle(
                 value_t!(m.value_of("build-line-style"), DotLineShape)
                     .unwrap_or(DotLineShape::Solid),

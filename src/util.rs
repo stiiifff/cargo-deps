@@ -3,20 +3,20 @@ use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use toml::{self, Value};
-use error::{CliErrorKind, CliResult};
+use crate::error::{CliErrorKind, CliResult};
 
 pub fn toml_from_file<P: AsRef<Path>>(p: P) -> CliResult<Value> {
     debugln!("executing; from_file; file={:?}", p.as_ref());
-    let mut f = try!(File::open(p.as_ref()));
+    let mut f = r#try!(File::open(p.as_ref()));
 
     let mut s = String::new();
-    try!(f.read_to_string(&mut s));
+    r#try!(f.read_to_string(&mut s));
 
     Ok(Value::try_from(s)?)
 }
 
 pub fn find_manifest_file(file: &str) -> CliResult<PathBuf> {
-    let mut pwd = try!(env::current_dir());
+    let mut pwd = r#try!(env::current_dir());
 
     loop {
         let manifest = pwd.join(file);

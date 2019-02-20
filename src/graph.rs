@@ -1,9 +1,9 @@
 use std::fmt;
 use std::io::{self, Write};
 
-use config::Config;
-use dep::ResolvedDep;
-use error::CliResult;
+use crate::config::Config;
+use crate::dep::ResolvedDep;
+use crate::error::CliResult;
 
 pub type Nd = usize;
 
@@ -12,7 +12,7 @@ pub struct Ed(pub Nd, pub Nd);
 
 impl Ed {
     pub fn label<W: Write>(&self, w: &mut W, dg: &DepGraph) -> io::Result<()> {
-        use dep::DepKind::{Build, Dev, Optional};
+        use crate::dep::DepKind::{Build, Dev, Optional};
         let parent = dg.get(self.0).unwrap().kind();
         let child = dg.get(self.1).unwrap().kind();
 
@@ -227,16 +227,16 @@ impl<'c, 'o> DepGraph<'c, 'o> {
         self.remove_orphans();
         self.remove_self_pointing();
         debugln!("dg={:#?}", self);
-        try!(writeln!(output, "{}", "digraph dependencies {"));
+        r#try!(writeln!(output, "{}", "digraph dependencies {"));
         for (i, dep) in self.nodes.iter().enumerate() {
-            try!(write!(output, "\tN{}", i));
-            try!(dep.label(output, self.cfg));
+            r#try!(write!(output, "\tN{}", i));
+            r#try!(dep.label(output, self.cfg));
         }
         for ed in &self.edges {
-            try!(write!(output, "\t{}", ed));
-            try!(ed.label(output, &self));
+            r#try!(write!(output, "\t{}", ed));
+            r#try!(ed.label(output, &self));
         }
-        try!(writeln!(output, "{}", "}"));
+        r#try!(writeln!(output, "{}", "}"));
         Ok(())
     }
 }

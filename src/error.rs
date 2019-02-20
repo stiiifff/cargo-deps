@@ -3,7 +3,7 @@ use std::fmt::Result as FmtResult;
 use std::fmt::{Display, Formatter};
 use std::io;
 
-use fmt::Format;
+use crate::fmt::Format;
 
 pub type CliResult<T> = Result<T, CliError>;
 

@@ -1,6 +1,6 @@
 use std::io::{Result, Write};
 
-use config::Config;
+use crate::config::Config;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum DepKind {
