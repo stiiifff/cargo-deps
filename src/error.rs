@@ -1,20 +1,15 @@
+use crate::color;
 use std::error::Error;
 use std::fmt::Result as FmtResult;
 use std::fmt::{Display, Formatter};
 use std::io;
-
-use crate::fmt::Format;
+use termcolor::{Color, ColorSpec};
 
 pub type CliResult<T> = Result<T, CliError>;
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub enum CliErrorKind {
-    UnknownBoolArg,
-    TomlTableRoot,
     TomlNoName,
-    CurrentDir,
-    Unknown,
     Io(io::Error),
     Generic(String),
 }
@@ -23,11 +18,7 @@ impl CliErrorKind {
     fn description(&self) -> &str {
         match *self {
             CliErrorKind::Generic(ref e) => e,
-            CliErrorKind::TomlTableRoot => "No root table found for toml file",
             CliErrorKind::TomlNoName => "No name for package in toml file",
-            CliErrorKind::CurrentDir => "Unable to determine the current working directory",
-            CliErrorKind::UnknownBoolArg => "The value supplied isn't valid, either use 'true/false', 'yes/no', or the first letter of either.",
-            CliErrorKind::Unknown => "An unknown fatal error has occurred, please consider filing a bug-report!",
             CliErrorKind::Io(ref e) => e.description(),
         }
     }
@@ -36,7 +27,7 @@ impl CliErrorKind {
 impl From<CliErrorKind> for CliError {
     fn from(kind: CliErrorKind) -> Self {
         CliError {
-            error: format!("{} {}", Format::Error("error:"), kind.description()),
+            error: kind.description().into(),
             kind,
         }
     }
@@ -53,8 +44,13 @@ pub struct CliError {
 // Copies clog::error::Error;
 impl CliError {
     /// Print this error and immediately exit the program.
-    pub fn exit(&self) -> ! {
-        eprintln!("{}", self);
+    pub fn exit(&self, no_color: bool) -> ! {
+        let mut stderr = color::init_color_stderr(no_color);
+        let mut color = ColorSpec::new();
+        color.set_fg(Some(Color::Red)).set_bold(true);
+
+        color::set_and_unset_color(&mut stderr, "error:", &color);
+        eprintln!(" {}", self);
         ::std::process::exit(1)
     }
 }
@@ -81,7 +77,7 @@ impl Error for CliError {
 impl From<io::Error> for CliError {
     fn from(ioe: io::Error) -> Self {
         CliError {
-            error: format!("{} {}", Format::Error("Error:"), ioe.description()),
+            error: ioe.description().into(),
             kind: CliErrorKind::Io(ioe),
         }
     }
