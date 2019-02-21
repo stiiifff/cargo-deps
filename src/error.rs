@@ -8,40 +8,31 @@ use termcolor::{Color, ColorSpec};
 pub type CliResult<T> = Result<T, CliError>;
 
 #[derive(Debug)]
-pub enum CliErrorKind {
+pub enum CliError {
     TomlNoName,
+    TomlNoPackage,
     Io(io::Error),
     Generic(String),
 }
 
-impl CliErrorKind {
+impl Error for CliError {
     fn description(&self) -> &str {
         match *self {
-            CliErrorKind::Generic(ref e) => e,
-            CliErrorKind::TomlNoName => "No name for package in toml file",
-            CliErrorKind::Io(ref e) => e.description(),
+            CliError::Generic(ref e) => e,
+            CliError::TomlNoName => "No name for package in toml file",
+            CliError::TomlNoPackage => "No package in toml file",
+            CliError::Io(ref e) => e.description(),
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            CliError::Io(ref e) => Some(e),
+            _ => None,
         }
     }
 }
 
-impl From<CliErrorKind> for CliError {
-    fn from(kind: CliErrorKind) -> Self {
-        CliError {
-            error: kind.description().into(),
-            kind,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct CliError {
-    /// The formatted error message
-    pub error: String,
-    /// The type of error
-    pub kind: CliErrorKind,
-}
-
-// Copies clog::error::Error;
 impl CliError {
     /// Print this error and immediately exit the program.
     pub fn exit(&self, no_color: bool) -> ! {
@@ -57,37 +48,18 @@ impl CliError {
 
 impl Display for CliError {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        write!(f, "{}", self.error)
-    }
-}
-
-impl Error for CliError {
-    fn description(&self) -> &str {
-        self.kind.description()
-    }
-
-    fn cause(&self) -> Option<&Error> {
-        match self.kind {
-            CliErrorKind::Io(ref e) => Some(e),
-            _ => None,
-        }
+        write!(f, "{}", self.description())
     }
 }
 
 impl From<io::Error> for CliError {
     fn from(ioe: io::Error) -> Self {
-        CliError {
-            error: ioe.description().into(),
-            kind: CliErrorKind::Io(ioe),
-        }
+        CliError::Io(ioe)
     }
 }
 
-impl From<toml::ser::Error> for CliError {
-    fn from(err: toml::ser::Error) -> Self {
-        From::from(CliErrorKind::Generic(format!(
-            "Could not parse input as TOML: {}",
-            err
-        )))
+impl From<toml::de::Error> for CliError {
+    fn from(err: toml::de::Error) -> Self {
+        CliError::Generic(format!("Could not parse input as TOML: {}", err))
     }
 }

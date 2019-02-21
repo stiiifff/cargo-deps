@@ -4,7 +4,7 @@ use toml::Value;
 
 use crate::config::Config;
 use crate::dep::{DeclaredDep, DepKind};
-use crate::error::{CliErrorKind, CliResult};
+use crate::error::{CliError, CliResult};
 use crate::graph::DepGraph;
 use crate::util;
 
@@ -20,14 +20,18 @@ impl Project {
 
     pub fn graph(mut self) -> CliResult<DepGraph> {
         let (root_deps, root_name, root_version) = self.parse_root_deps()?;
+
         let mut dg = self.parse_lock_file()?;
         if !dg.set_root(&root_name, &root_version) {
-            return Err(From::from(CliErrorKind::TomlNoName));
+            return Err(CliError::TomlNoName);
         }
+
         self.set_resolved_kind(&root_deps, &mut dg);
+
         if !self.cfg.include_vers {
             Project::show_version_on_duplicates(&mut dg);
         }
+
         Ok(dg)
     }
 
@@ -46,7 +50,7 @@ impl Project {
             .enumerate()
             .take(dep_ids_sorted_by_name.len() - 1)
         {
-            // Find other nodes with the same name
+            // Find other nodes with the same name.
             // We need to iterate one more time after the last node to handle the break.
             for (j, &dep) in dep_ids_sorted_by_name
                 .iter()
@@ -54,8 +58,8 @@ impl Project {
                 .take(dep_ids_sorted_by_name.len() + 1)
                 .skip(i + 1)
             {
-                // Stop once we've found a node with a different name
-                // or reached the end of the list.
+                // Stop once we've found a node with a different name or reached the end of the
+                // list.
                 if j >= dep_ids_sorted_by_name.len()
                     || dg.nodes[dep_id_i].name != dg.nodes[dep].name
                 {
@@ -137,8 +141,7 @@ impl Project {
     /// Builds a graph of the resolved dependencies declared in the lock file.
     fn parse_lock_file(&mut self) -> CliResult<DepGraph> {
         fn parse_package<>(dg: &mut DepGraph, pkg: &Value) {
-            let name = pkg
-                .get("name")
+            let name = pkg.get("name")
                 .expect("no 'name' field in Cargo.lock [package] or [root] table")
                 .as_str()
                 .expect(
@@ -146,8 +149,7 @@ impl Project {
                      valid string",
                 )
                 .to_owned();
-            let ver = pkg
-                .get("version")
+            let ver = pkg.get("version")
                 .expect("no 'version' field in Cargo.lock [package] or [root] table")
                 .as_str()
                 .expect(
@@ -194,9 +196,11 @@ impl Project {
         let mut declared_deps = vec![];
         let mut v = vec![];
 
+        // Get the name and version of the root project.
         let (root_name, root_version) = {
             let mut name = None;
             let mut version = None;
+
             if let Some(table) = manifest_toml.get("package") {
                 if let Some(table) = table.as_table() {
                     if let Some(&Value::String(ref n)) = table.get("name") {
@@ -206,11 +210,15 @@ impl Project {
                         version = Some(v);
                     }
                 }
+            } else {
+                return Err(CliError::TomlNoPackage);
             }
+
             if let (Some(n), Some(v)) = (name, version) {
                 (n.to_owned(), v.to_owned())
             } else {
-                return Err(From::from(CliErrorKind::TomlNoName));
+                println!("{:?} {:?}", name, version);
+                return Err(CliError::TomlNoName);
             }
         };
 

@@ -68,7 +68,7 @@ fn main() {
 fn execute(cfg: Config) -> CliResult<()> {
     let dot_file = cfg.dot_file.clone();
     let project = Project::with_config(cfg)?;
-    let graph = project.graph()?;
+    let graph = dbg!(project.graph()?);
 
     match dot_file {
         None => {
