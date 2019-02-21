@@ -30,91 +30,14 @@ impl Project {
         dg.set_resolved_kind(&root_deps);
 
         if !self.cfg.include_vers {
-            Project::show_version_on_duplicates(&mut dg);
+            dg.show_version_on_duplicates();
         }
 
         Ok(dg)
     }
 
-    /// Forces the version to be displayed on dependencies that have the same name (but a different
-    /// version) as another dependency.
-    fn show_version_on_duplicates(dg: &mut DepGraph) {
-        // Build a list of node IDs, sorted by the name of the dependency on that node.
-        let dep_ids_sorted_by_name = {
-            let mut deps = dg.nodes.iter().enumerate().collect::<Vec<_>>();
-            deps.sort_by_key(|dep| &*dep.1.name);
-            deps.iter().map(|dep| dep.0).collect::<Vec<_>>()
-        };
-
-        for (i, &dep_id_i) in dep_ids_sorted_by_name
-            .iter()
-            .enumerate()
-            .take(dep_ids_sorted_by_name.len() - 1)
-        {
-            // Find other nodes with the same name.
-            // We need to iterate one more time after the last node to handle the break.
-            for (j, &dep) in dep_ids_sorted_by_name
-                .iter()
-                .enumerate()
-                .take(dep_ids_sorted_by_name.len() + 1)
-                .skip(i + 1)
-            {
-                // Stop once we've found a node with a different name or reached the end of the
-                // list.
-                if j >= dep_ids_sorted_by_name.len()
-                    || dg.nodes[dep_id_i].name != dg.nodes[dep].name
-                {
-                    // If there are at least two nodes with the same name
-                    if j >= i + 2 {
-                        // Set force_write_ver = true on all nodes
-                        // from dep_ids_sorted_by_name[i] to dep_ids_sorted_by_name[j - 1].
-                        // Remember: j is pointing on the next node with a *different* name!
-                        // Remember also: i..j includes i but excludes j.
-                        for &dep_id_k in dep_ids_sorted_by_name.iter().take(j).skip(i) {
-                            dg.nodes[dep_id_k].force_write_ver = true;
-                        }
-                    }
-
-                    break;
-                }
-            }
-        }
-    }
-
     /// Builds a graph of the resolved dependencies declared in the lock file.
     fn parse_lock_file(&self, lock_path: PathBuf) -> CliResult<DepGraph> {
-        fn parse_package(dg: &mut DepGraph, pkg: &Value) {
-            let name = pkg
-                .get("name")
-                .expect("no 'name' field in Cargo.lock [package] or [root] table")
-                .as_str()
-                .expect(
-                    "'name' field of [package] or [root] table in Cargo.lock was not a \
-                     valid string",
-                )
-                .to_owned();
-            let ver = pkg
-                .get("version")
-                .expect("no 'version' field in Cargo.lock [package] or [root] table")
-                .as_str()
-                .expect(
-                    "'version' field of [package] or [root] table in Cargo.lock was not a \
-                     valid string",
-                )
-                .to_owned();
-
-            let id = dg.find_or_add(&*name, &*ver);
-
-            if let Some(&Value::Array(ref deps)) = pkg.get("dependencies") {
-                for dep in deps {
-                    let dep_vec = dep.as_str().unwrap_or("").split(' ').collect::<Vec<_>>();
-                    let dep_string = dep_vec[0].to_owned();
-                    let ver = dep_vec[1];
-                    dg.add_child(id, &*dep_string, ver);
-                }
-            }
-        }
-
         let lock_toml = util::toml_from_file(lock_path)?;
 
         let mut dg = DepGraph::new(self.cfg.clone());
@@ -186,5 +109,37 @@ impl Project {
         }
 
         Ok((declared_deps, root_name, root_version))
+    }
+}
+
+fn parse_package(dg: &mut DepGraph, pkg: &Value) {
+    let name = pkg
+        .get("name")
+        .expect("no 'name' field in Cargo.lock [package] or [root] table")
+        .as_str()
+        .expect(
+            "'name' field of [package] or [root] table in Cargo.lock was not a \
+             valid string",
+        )
+        .to_owned();
+    let ver = pkg
+        .get("version")
+        .expect("no 'version' field in Cargo.lock [package] or [root] table")
+        .as_str()
+        .expect(
+            "'version' field of [package] or [root] table in Cargo.lock was not a \
+             valid string",
+        )
+        .to_owned();
+
+    let id = dg.find_or_add(&*name, &*ver);
+
+    if let Some(&Value::Array(ref deps)) = pkg.get("dependencies") {
+        for dep in deps {
+            let dep_vec = dep.as_str().unwrap_or("").split(' ').collect::<Vec<_>>();
+            let dep_string = dep_vec[0].to_owned();
+            let ver = dep_vec[1];
+            dg.add_child(id, &*dep_string, ver);
+        }
     }
 }

@@ -117,6 +117,51 @@ impl DepGraph {
         self.remove_orphans();
     }
 
+    /// Forces the version to be displayed on dependencies that have the same name (but a different
+    /// version) as another dependency.
+    pub fn show_version_on_duplicates(&mut self) {
+        // Build a list of node IDs, sorted by the name of the dependency on that node.
+        let dep_ids_sorted_by_name = {
+            let mut deps = self.nodes.iter().enumerate().collect::<Vec<_>>();
+            deps.sort_by_key(|dep| &*dep.1.name);
+            deps.iter().map(|dep| dep.0).collect::<Vec<_>>()
+        };
+
+        for (i, &dep_id_i) in dep_ids_sorted_by_name
+            .iter()
+            .enumerate()
+            .take(dep_ids_sorted_by_name.len() - 1)
+        {
+            // Find other nodes with the same name.
+            // We need to iterate one more time after the last node to handle the break.
+            for (j, &dep) in dep_ids_sorted_by_name
+                .iter()
+                .enumerate()
+                .take(dep_ids_sorted_by_name.len() + 1)
+                .skip(i + 1)
+            {
+                // Stop once we've found a node with a different name or reached the end of the
+                // list.
+                if j >= dep_ids_sorted_by_name.len()
+                    || self.nodes[dep_id_i].name != self.nodes[dep].name
+                {
+                    // If there are at least two nodes with the same name
+                    if j >= i + 2 {
+                        // Set force_write_ver = true on all nodes
+                        // from dep_ids_sorted_by_name[i] to dep_ids_sorted_by_name[j - 1].
+                        // Remember: j is pointing on the next node with a *different* name!
+                        // Remember also: i..j includes i but excludes j.
+                        for &dep_id_k in dep_ids_sorted_by_name.iter().take(j).skip(i) {
+                            self.nodes[dep_id_k].force_write_ver = true;
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+
     pub fn add_child(&mut self, parent: usize, dep_name: &str, dep_ver: &str) -> usize {
         let idr = self.find_or_add(dep_name, dep_ver);
         self.edges.push(Edge(parent, idr));
