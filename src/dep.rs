@@ -62,10 +62,7 @@ impl ResolvedDep {
         } else {
             self.name.clone()
         };
-        match self.kind() {
-            DepKind::Dev => writeln!(w, "[label={:?}{}];", name, c.dev_style),
-            DepKind::Optional => writeln!(w, "[label={:?}{}];", name, c.optional_style),
-            _ => writeln!(w, "[label={:?}{}];", name, c.build_style),
-        }
+
+        writeln!(w, "[label={:?}];", name)
     }
 }

@@ -5,35 +5,30 @@ use crate::config::Config;
 use crate::dep::ResolvedDep;
 use crate::error::CliResult;
 
-pub type Nd = usize;
+pub type Node = usize;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
-pub struct Ed(pub Nd, pub Nd);
+pub struct Edge(pub Node, pub Node);
 
-impl Ed {
+impl Edge {
     pub fn label<W: Write>(&self, w: &mut W, dg: &DepGraph) -> io::Result<()> {
         use crate::dep::DepKind::{Build, Dev, Optional};
+
         let parent = dg.get(self.0).unwrap().kind();
         let child = dg.get(self.1).unwrap().kind();
 
         match (parent, child) {
-            (Build, Build) => writeln!(w, "[label=\"\"{}];", dg.cfg.build_lines),
-            (Build, Dev) => writeln!(w, "[label=\"\"{}];", dg.cfg.dev_lines),
-            (Build, Optional) => writeln!(w, "[label=\"\"{}];", dg.cfg.optional_lines),
-            (Optional, Build) => writeln!(w, "[label=\"\"{}];", dg.cfg.optional_lines),
-            (Optional, Dev) => writeln!(w, "[label=\"\"{}];", dg.cfg.optional_lines),
-            (Optional, Optional) => writeln!(w, "[label=\"\"{}];", dg.cfg.optional_lines),
-            (Dev, Build) => writeln!(w, "[label=\"\"{}];", dg.cfg.dev_lines),
-            (Dev, Dev) => writeln!(w, "[label=\"\"{}];", dg.cfg.dev_lines),
-            (Dev, Optional) => writeln!(w, "[label=\"\"{}];", dg.cfg.dev_lines),
+            (_, Build) => writeln!(w, "[label=\"\",color=black,style=dashed];"),
+            (_, Dev) => writeln!(w, "[label=\"\",color=red,style=dashed];"),
+            (_, Optional) => writeln!(w, "[label=\"\",color=orange,style=dotted];"),
             _ => writeln!(w, "[label=\"\"];"),
         }
     }
 }
 
-impl fmt::Display for Ed {
+impl fmt::Display for Edge {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let &Ed(il, ir) = self;
+        let &Edge(il, ir) = self;
         write!(f, "N{} -> N{}", il, ir)
     }
 }
@@ -44,7 +39,7 @@ where
     'o: 'c,
 {
     pub nodes: Vec<ResolvedDep>,
-    pub edges: Vec<Ed>,
+    pub edges: Vec<Edge>,
     cfg: &'c Config<'o>,
 }
 
@@ -59,7 +54,7 @@ impl<'c, 'o> DepGraph<'c, 'o> {
 
     pub fn add_child(&mut self, parent: usize, dep_name: &str, dep_ver: &str) -> usize {
         let idr = self.find_or_add(dep_name, dep_ver);
-        self.edges.push(Ed(parent, idr));
+        self.edges.push(Edge(parent, idr));
         idr
     }
 
@@ -89,7 +84,7 @@ impl<'c, 'o> DepGraph<'c, 'o> {
         }
         let mut to_upd = vec![];
         for c in id..self.nodes.len() {
-            for (eid, &Ed(idl, idr)) in self.edges.iter().enumerate() {
+            for (eid, &Edge(idl, idr)) in self.edges.iter().enumerate() {
                 if idl == c {
                     to_upd.push((eid, Side::Left, c - 1));
                 }
@@ -108,12 +103,12 @@ impl<'c, 'o> DepGraph<'c, 'o> {
 
     pub fn remove_orphans(&mut self) {
         let len = self.nodes.len();
-        self.edges.retain(|&Ed(idl, idr)| idl < len && idr < len);
+        self.edges.retain(|&Edge(idl, idr)| idl < len && idr < len);
         loop {
             let mut removed = false;
             let mut used = vec![false; self.nodes.len()];
             used[0] = true;
-            for &Ed(_, idr) in &self.edges {
+            for &Edge(_, idr) in &self.edges {
                 used[idr] = true;
             }
 
@@ -122,7 +117,7 @@ impl<'c, 'o> DepGraph<'c, 'o> {
                     self.nodes.remove(id);
 
                     // Remove edges originating from the removed node
-                    self.edges.retain(|&Ed(origin, _)| origin != id);
+                    self.edges.retain(|&Edge(origin, _)| origin != id);
                     // Adjust edges to match the new node indexes
                     for edge in self.edges.iter_mut() {
                         if edge.0 > id {
@@ -146,7 +141,7 @@ impl<'c, 'o> DepGraph<'c, 'o> {
         loop {
             let mut found = false;
             let mut self_p = vec![false; self.edges.len()];
-            for (eid, &Ed(idl, idr)) in self.edges.iter().enumerate() {
+            for (eid, &Edge(idl, idr)) in self.edges.iter().enumerate() {
                 if idl == idr {
                     found = true;
                     self_p[eid] = true;
