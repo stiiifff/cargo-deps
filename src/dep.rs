@@ -63,6 +63,11 @@ impl ResolvedDep {
             self.name.clone()
         };
 
-        writeln!(w, "[label={:?}];", name)
+        match self.kind() {
+            DepKind::Build => writeln!(w, "[label=\"{}\"];", name),
+            DepKind::Dev => writeln!(w, "[label=\"{}\",color=blue];", name),
+            DepKind::Optional => writeln!(w, "[label=\"{}\",color=red];", name),
+            _ => writeln!(w, "[label=\"{}\",color=purple];", name),
+        }
     }
 }

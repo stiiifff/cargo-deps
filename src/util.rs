@@ -12,33 +12,31 @@ pub fn toml_from_file<P: AsRef<Path>>(p: P) -> CliResult<Value> {
     f.read_to_string(&mut s)?;
 
     let toml: Value = toml::from_str(&s)?;
-    assert!(toml.is_table());
     Ok(toml)
 }
 
 pub fn find_manifest_file(file: &str) -> CliResult<PathBuf> {
-    let mut pwd = env::current_dir()?;
+    let pwd = env::current_dir()?;
+    let mut dir = pwd.clone();
 
     loop {
-        let manifest = pwd.join(file);
+        let manifest = dir.join(file);
         if let Ok(metadata) = fs::metadata(&manifest) {
             if metadata.is_file() {
                 return Ok(manifest);
             }
         }
 
-        let pwd2 = pwd.clone();
-        let parent = pwd2.parent();
+        let parent = dir.parent();
         if parent.is_none() {
             break;
         }
-        pwd = parent.unwrap().to_path_buf();
+        dir = parent.unwrap().to_path_buf();
     }
 
     Err(CliError::Generic(format!(
         "Could not find `{}` in `{}` or any \
-         parent directory, or it isn't a valid \
-         lock-file",
+         parent directory",
         file,
         pwd.display()
     )))

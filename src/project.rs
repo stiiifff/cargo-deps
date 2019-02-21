@@ -1,12 +1,9 @@
-use std::collections::HashMap;
-
-use toml::Value;
-
 use crate::config::Config;
 use crate::dep::{DeclaredDep, DepKind};
 use crate::error::{CliError, CliResult};
 use crate::graph::DepGraph;
 use crate::util;
+use toml::Value;
 
 #[derive(Debug)]
 pub struct Project {
@@ -18,15 +15,18 @@ impl Project {
         Ok(Project { cfg })
     }
 
-    pub fn graph(mut self) -> CliResult<DepGraph> {
+    pub fn graph(self) -> CliResult<DepGraph> {
         let (root_deps, root_name, root_version) = self.parse_root_deps()?;
 
         let mut dg = self.parse_lock_file()?;
+
+        // Set node 0 to be the root.
         if !dg.set_root(&root_name, &root_version) {
-            return Err(CliError::TomlNoName);
+            return Err(CliError::Toml("Missing name or version".into()));
         }
 
-        self.set_resolved_kind(&root_deps, &mut dg);
+        // Set the kind of dependency on each dep.
+        dg.set_resolved_kind(&root_deps);
 
         if !self.cfg.include_vers {
             Project::show_version_on_duplicates(&mut dg);
@@ -80,68 +80,11 @@ impl Project {
         }
     }
 
-    /// Sets the kind of dependency on each dependency based on how the dependencies are declared in
-    /// the manifest.
-    fn set_resolved_kind(&mut self, declared_deps: &[DeclaredDep], dg: &mut DepGraph) {
-        let declared_deps_map = declared_deps
-            .iter()
-            .map(|dd| (&*dd.name, dd.kind))
-            .collect::<HashMap<_, _>>();
-
-        dg.nodes[0].is_build = true;
-
-        dg.edges.sort(); // make sure to process edges from the root node first
-        for ed in dg.edges.iter() {
-            if ed.0 == 0 {
-                // If this is an edge from the root node,
-                // set the kind based on how the dependency is declared in the manifest file.
-                if let Some(kind) = declared_deps_map.get(&*dg.nodes[ed.1].name) {
-                    match *kind {
-                        DepKind::Build => dg.nodes[ed.1].is_build = true,
-                        DepKind::Dev => dg.nodes[ed.1].is_dev = true,
-                        DepKind::Optional => dg.nodes[ed.1].is_optional = true,
-                        _ => (),
-                    }
-                }
-            } else {
-                // If this is an edge from a dependency node, propagate the kind.
-                // This is a set of flags because a dependency can appear several times in the graph,
-                // and the kind of dependency may vary based on the path to that dependency.
-                // The flags start at false, and once they become true, they stay true.
-                // ResolvedDep::kind() will pick a kind based on their priority.
-                if dg.nodes[ed.0].is_build {
-                    dg.nodes[ed.1].is_build = true;
-                }
-
-                if dg.nodes[ed.0].is_dev {
-                    dg.nodes[ed.1].is_dev = true;
-                }
-
-                if dg.nodes[ed.0].is_optional {
-                    dg.nodes[ed.1].is_optional = true;
-                }
-            }
-        }
-
-        // Remove the nodes that the user doesn't want.
-        // Start at 1 to keep the root node.
-        for id in (1..dg.nodes.len()).rev() {
-            let kind = dg.nodes[id].kind();
-            if (kind == DepKind::Build && !self.cfg.build_deps)
-                || (kind == DepKind::Dev && !self.cfg.dev_deps)
-                || (kind == DepKind::Optional && !self.cfg.optional_deps)
-            {
-                dg.remove(id);
-            }
-        }
-
-        dg.remove_orphans();
-    }
-
     /// Builds a graph of the resolved dependencies declared in the lock file.
-    fn parse_lock_file(&mut self) -> CliResult<DepGraph> {
-        fn parse_package<>(dg: &mut DepGraph, pkg: &Value) {
-            let name = pkg.get("name")
+    fn parse_lock_file(&self) -> CliResult<DepGraph> {
+        fn parse_package(dg: &mut DepGraph, pkg: &Value) {
+            let name = pkg
+                .get("name")
                 .expect("no 'name' field in Cargo.lock [package] or [root] table")
                 .as_str()
                 .expect(
@@ -149,7 +92,8 @@ impl Project {
                      valid string",
                 )
                 .to_owned();
-            let ver = pkg.get("version")
+            let ver = pkg
+                .get("version")
                 .expect("no 'version' field in Cargo.lock [package] or [root] table")
                 .as_str()
                 .expect(
@@ -170,7 +114,9 @@ impl Project {
             }
         }
 
-        let lock_path = util::find_manifest_file(&self.cfg.lock_file)?;
+        let manifest = &self.cfg.manifest_path;
+        let lock_file = format!("{}.lock", &manifest[0..manifest.len() - 5]);
+        let lock_path = util::find_manifest_file(&lock_file)?;
         let lock_toml = util::toml_from_file(lock_path)?;
 
         let mut dg = DepGraph::new(self.cfg.clone());
@@ -189,8 +135,8 @@ impl Project {
     }
 
     /// Builds a list of the dependencies declared in the manifest file.
-    pub fn parse_root_deps(&mut self) -> CliResult<(Vec<DeclaredDep>, String, String)> {
-        let manifest_path = util::find_manifest_file(&self.cfg.manifest_file)?;
+    pub fn parse_root_deps(&self) -> CliResult<(Vec<DeclaredDep>, String, String)> {
+        let manifest_path = util::find_manifest_file(&self.cfg.manifest_path)?;
         let manifest_toml = util::toml_from_file(manifest_path)?;
 
         let mut declared_deps = vec![];
@@ -198,27 +144,22 @@ impl Project {
 
         // Get the name and version of the root project.
         let (root_name, root_version) = {
-            let mut name = None;
-            let mut version = None;
-
             if let Some(table) = manifest_toml.get("package") {
                 if let Some(table) = table.as_table() {
-                    if let Some(&Value::String(ref n)) = table.get("name") {
-                        name = Some(n);
+                    if let (Some(&Value::String(ref n)), Some(&Value::String(ref v))) =
+                        (table.get("name"), table.get("version"))
+                    {
+                        (n.to_string(), v.to_string())
+                    } else {
+                        return Err(CliError::Toml("No name for 'package'".into()));
                     }
-                    if let Some(&Value::String(ref v)) = table.get("version") {
-                        version = Some(v);
-                    }
+                } else {
+                    return Err(CliError::Toml(
+                        "Could not parse 'package' as a table".into(),
+                    ));
                 }
             } else {
-                return Err(CliError::TomlNoPackage);
-            }
-
-            if let (Some(n), Some(v)) = (name, version) {
-                (n.to_owned(), v.to_owned())
-            } else {
-                println!("{:?} {:?}", name, version);
-                return Err(CliError::TomlNoName);
+                return Err(CliError::Toml("No 'package' table found".into()));
             }
         };
 

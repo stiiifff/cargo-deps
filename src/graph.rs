@@ -1,9 +1,9 @@
+use crate::config::Config;
+use crate::dep::{DeclaredDep, DepKind, ResolvedDep};
+use crate::error::CliResult;
+use std::collections::HashMap;
 use std::fmt;
 use std::io::{self, Write};
-
-use crate::config::Config;
-use crate::dep::ResolvedDep;
-use crate::error::CliResult;
 
 pub type Node = usize;
 
@@ -18,10 +18,12 @@ impl Edge {
         let child = dg.get(self.1).unwrap().kind();
 
         match (parent, child) {
-            (_, Build) => writeln!(w, "[label=\"\",color=black,style=dashed];"),
-            (_, Dev) => writeln!(w, "[label=\"\",color=red,style=dashed];"),
-            (_, Optional) => writeln!(w, "[label=\"\",color=orange,style=dotted];"),
-            _ => writeln!(w, "[label=\"\"];"),
+            (Build, Build) => writeln!(w, "[label=\"\"];"),
+            (Dev, _) | (Build, Dev) => writeln!(w, "[label=\"\",color=blue,style=dashed];"),
+            (Optional, _) | (Build, Optional) => {
+                writeln!(w, "[label=\"\",color=red,style=dashed];")
+            }
+            _ => writeln!(w, "[label=\"\",color=purple,style=dashed];"),
         }
     }
 }
@@ -47,6 +49,72 @@ impl DepGraph {
             edges: vec![],
             cfg,
         }
+    }
+
+    /// Sets the kind of dependency on each dependency based on how the dependencies are declared in
+    /// the manifest.
+    pub fn set_resolved_kind(&mut self, declared_deps: &[DeclaredDep]) {
+        let declared_deps_map = declared_deps
+            .iter()
+            .map(|dd| (&*dd.name, dd.kind))
+            .collect::<HashMap<_, _>>();
+
+        self.nodes[0].is_build = true;
+
+        // Make sure to process edges from the root node first.
+        // Sorts by ID of first node first, then by second node.
+        self.edges.sort();
+
+        // FIXME: We repeat the following step several times to ensure that the kinds are propogated
+        // to all nodes. The surefire way to handle this would be to do a proper topological sort.
+        for _ in 0..10 {
+            for ed in self.edges.iter() {
+                if ed.0 == 0 {
+                    // If this is an edge from the root node,
+                    // set the kind based on how the dependency is declared in the manifest file.
+                    if let Some(kind) = declared_deps_map.get(&*self.nodes[ed.1].name) {
+                        match *kind {
+                            DepKind::Build => self.nodes[ed.1].is_build = true,
+                            DepKind::Dev => self.nodes[ed.1].is_dev = true,
+                            DepKind::Optional => self.nodes[ed.1].is_optional = true,
+                            _ => (),
+                        }
+                    }
+                } else {
+                    // If this is an edge from a dependency node, propagate the kind. This is a set of
+                    // flags because a dependency can appear several times in the graph, and the kind of
+                    // dependency may vary based on the path to that dependency. The flags start at
+                    // false, and once they become true, they stay true. ResolvedDep::kind() will pick a
+                    // kind based on their priority.
+
+                    if self.nodes[ed.0].is_build {
+                        self.nodes[ed.1].is_build = true;
+                    }
+
+                    if self.nodes[ed.0].is_dev {
+                        self.nodes[ed.1].is_dev = true;
+                    }
+
+                    if self.nodes[ed.0].is_optional {
+                        self.nodes[ed.1].is_optional = true;
+                    }
+                }
+            }
+        }
+
+        // Remove the nodes that the user doesn't want.
+        // Start at 1 to keep the root node.
+        for id in (1..self.nodes.len()).rev() {
+            let kind = self.nodes[id].kind();
+            if (kind == DepKind::Build && !self.cfg.build_deps)
+                || (kind == DepKind::Dev && !self.cfg.dev_deps)
+                || (kind == DepKind::Optional && !self.cfg.optional_deps)
+            {
+                self.remove(id);
+            }
+        }
+
+        self.remove_orphans();
     }
 
     pub fn add_child(&mut self, parent: usize, dep_name: &str, dep_ver: &str) -> usize {
@@ -164,6 +232,7 @@ impl DepGraph {
         } else {
             return false;
         };
+
         if root_id == 0 {
             return true;
         }

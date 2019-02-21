@@ -41,15 +41,12 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
                  --no-color 'Disable color output. Equivalent to setting the NO_COLOR environment \
                  variable'
 
-                 --build-deps 'Should build deps be in the graph?'
+                 --no-build-deps 'Should build deps be excluded from the graph?'
                  --dev-deps 'Should dev deps be in the graph?'
                  --optional-deps 'Should optional deps be in the graph?'",
         )
         .args(&[
-            Arg::from_usage("--lock-file [PATH] 'Specify location of .lock file'")
-                .default_value("Cargo.lock")
-                .validator(is_file),
-            Arg::from_usage("--manifest-file [PATH] 'Specify location of manifest file'")
+            Arg::from_usage("--manifest-path [PATH] 'Specify location of manifest file'")
                 .default_value("Cargo.toml")
                 .validator(is_file),
         ])
@@ -68,7 +65,7 @@ fn main() {
 fn execute(cfg: Config) -> CliResult<()> {
     let dot_file = cfg.dot_file.clone();
     let project = Project::with_config(cfg)?;
-    let graph = dbg!(project.graph()?);
+    let graph = project.graph()?;
 
     match dot_file {
         None => {

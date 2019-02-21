@@ -1,5 +1,4 @@
 use crate::color;
-use std::error::Error;
 use std::fmt::Result as FmtResult;
 use std::fmt::{Display, Formatter};
 use std::io;
@@ -9,26 +8,17 @@ pub type CliResult<T> = Result<T, CliError>;
 
 #[derive(Debug)]
 pub enum CliError {
-    TomlNoName,
-    TomlNoPackage,
+    Toml(String),
     Io(io::Error),
     Generic(String),
 }
 
-impl Error for CliError {
-    fn description(&self) -> &str {
+impl Display for CliError {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
         match *self {
-            CliError::Generic(ref e) => e,
-            CliError::TomlNoName => "No name for package in toml file",
-            CliError::TomlNoPackage => "No package in toml file",
-            CliError::Io(ref e) => e.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&Error> {
-        match *self {
-            CliError::Io(ref e) => Some(e),
-            _ => None,
+            CliError::Generic(ref e) => write!(f, "{}", e),
+            CliError::Toml(ref e) => write!(f, "Could not parse toml file: {}", e),
+            CliError::Io(ref e) => write!(f, "{}", e),
         }
     }
 }
@@ -43,12 +33,6 @@ impl CliError {
         color::set_and_unset_color(&mut stderr, "error:", &color);
         eprintln!(" {}", self);
         ::std::process::exit(1)
-    }
-}
-
-impl Display for CliError {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        write!(f, "{}", self.description())
     }
 }
 
