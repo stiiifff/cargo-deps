@@ -34,17 +34,14 @@ impl fmt::Display for Edge {
 }
 
 #[derive(Debug)]
-pub struct DepGraph<'c, 'o>
-where
-    'o: 'c,
-{
+pub struct DepGraph {
     pub nodes: Vec<ResolvedDep>,
     pub edges: Vec<Edge>,
-    cfg: &'c Config<'o>,
+    cfg: Config,
 }
 
-impl<'c, 'o> DepGraph<'c, 'o> {
-    pub fn new(cfg: &'c Config<'o>) -> Self {
+impl DepGraph {
+    pub fn new(cfg: Config) -> Self {
         DepGraph {
             nodes: vec![],
             edges: vec![],
@@ -216,7 +213,7 @@ impl<'c, 'o> DepGraph<'c, 'o> {
         writeln!(output, "digraph dependencies {{")?;
         for (i, dep) in self.nodes.iter().enumerate() {
             write!(output, "\tN{}", i)?;
-            dep.label(output, self.cfg)?;
+            dep.label(output, &self.cfg)?;
         }
         for ed in &self.edges {
             write!(output, "\t{}", ed)?;

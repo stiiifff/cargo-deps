@@ -9,19 +9,16 @@ use crate::graph::DepGraph;
 use crate::util;
 
 #[derive(Debug)]
-pub struct Project<'c, 'o>
-where
-    'o: 'c,
-{
-    cfg: &'c Config<'o>,
+pub struct Project {
+    cfg: Config,
 }
 
-impl<'c, 'o> Project<'c, 'o> {
-    pub fn with_config(cfg: &'c Config<'o>) -> CliResult<Self> {
+impl Project {
+    pub fn with_config(cfg: Config) -> CliResult<Self> {
         Ok(Project { cfg })
     }
 
-    pub fn graph(mut self) -> CliResult<DepGraph<'c, 'o>> {
+    pub fn graph(mut self) -> CliResult<DepGraph> {
         let (root_deps, root_name, root_version) = self.parse_root_deps()?;
         let mut dg = self.parse_lock_file()?;
         if !dg.set_root(&root_name, &root_version) {
@@ -34,9 +31,9 @@ impl<'c, 'o> Project<'c, 'o> {
         Ok(dg)
     }
 
-    /// Forces the version to be displayed on dependencies
-    /// that have the same name (but a different version) as another dependency.
-    fn show_version_on_duplicates(dg: &mut DepGraph<'c, 'o>) {
+    /// Forces the version to be displayed on dependencies that have the same name (but a different
+    /// version) as another dependency.
+    fn show_version_on_duplicates(dg: &mut DepGraph) {
         // Build a list of node IDs, sorted by the name of the dependency on that node.
         let dep_ids_sorted_by_name = {
             let mut deps = dg.nodes.iter().enumerate().collect::<Vec<_>>();
@@ -79,9 +76,9 @@ impl<'c, 'o> Project<'c, 'o> {
         }
     }
 
-    /// Sets the kind of dependency on each dependency
-    /// based on how the dependencies are declared in the manifest.
-    fn set_resolved_kind(&mut self, declared_deps: &[DeclaredDep], dg: &mut DepGraph<'c, 'o>) {
+    /// Sets the kind of dependency on each dependency based on how the dependencies are declared in
+    /// the manifest.
+    fn set_resolved_kind(&mut self, declared_deps: &[DeclaredDep], dg: &mut DepGraph) {
         let declared_deps_map = declared_deps
             .iter()
             .map(|dd| (&*dd.name, dd.kind))
@@ -138,8 +135,8 @@ impl<'c, 'o> Project<'c, 'o> {
     }
 
     /// Builds a graph of the resolved dependencies declared in the lock file.
-    fn parse_lock_file(&mut self) -> CliResult<DepGraph<'c, 'o>> {
-        fn parse_package<'c, 'o>(dg: &mut DepGraph<'c, 'o>, pkg: &Value) {
+    fn parse_lock_file(&mut self) -> CliResult<DepGraph> {
+        fn parse_package<>(dg: &mut DepGraph, pkg: &Value) {
             let name = pkg
                 .get("name")
                 .expect("no 'name' field in Cargo.lock [package] or [root] table")
@@ -171,10 +168,10 @@ impl<'c, 'o> Project<'c, 'o> {
             }
         }
 
-        let lock_path = util::find_manifest_file(self.cfg.lock_file)?;
+        let lock_path = util::find_manifest_file(&self.cfg.lock_file)?;
         let lock_toml = util::toml_from_file(lock_path)?;
 
-        let mut dg = DepGraph::new(self.cfg);
+        let mut dg = DepGraph::new(self.cfg.clone());
 
         if let Some(root) = lock_toml.get("root") {
             parse_package(&mut dg, root);
@@ -191,7 +188,7 @@ impl<'c, 'o> Project<'c, 'o> {
 
     /// Builds a list of the dependencies declared in the manifest file.
     pub fn parse_root_deps(&mut self) -> CliResult<(Vec<DeclaredDep>, String, String)> {
-        let manifest_path = util::find_manifest_file(self.cfg.manifest_file)?;
+        let manifest_path = util::find_manifest_file(&self.cfg.manifest_file)?;
         let manifest_toml = util::toml_from_file(manifest_path)?;
 
         let mut declared_deps = vec![];

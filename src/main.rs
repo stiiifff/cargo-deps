@@ -66,10 +66,11 @@ fn main() {
 }
 
 fn execute(cfg: Config) -> CliResult<()> {
-    let project = Project::with_config(&cfg)?;
+    let dot_file = cfg.dot_file.clone();
+    let project = Project::with_config(cfg)?;
     let graph = project.graph()?;
 
-    match cfg.dot_file {
+    match dot_file {
         None => {
             let o = io::stdout();
             let mut bw = BufWriter::new(o.lock());
