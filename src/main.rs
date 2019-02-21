@@ -23,12 +23,13 @@ mod project;
 mod util;
 
 use crate::config::Config;
-use crate::error::CliResult;
+use crate::error::{CliError, CliResult};
 use crate::project::Project;
 use clap::{App, Arg, ArgMatches};
 use std::fs::File;
 use std::io::{self, BufWriter};
 use std::path::Path;
+use std::path::PathBuf;
 
 fn parse_cli<'a>() -> ArgMatches<'a> {
     App::new("cargo-deps")
@@ -63,10 +64,34 @@ fn main() {
 }
 
 fn execute(cfg: Config) -> CliResult<()> {
+    // Check the manifest file name.
+    let manifest_path = PathBuf::from(&cfg.manifest_path);
+    if let Some(file_name) = manifest_path.file_name() {
+        if file_name != "Cargo.toml" {
+            return Err(CliError::Toml(
+                "The manifest file must be named Cargo.toml".into(),
+            ));
+        }
+    } else {
+        return Err(CliError::Toml(
+            "The manifest path is not a valid file".into(),
+        ));
+    }
+
+    // Search through parent dirs for Cargo.toml.
+    let manifest_path = util::find_manifest_file(&manifest_path, false)?;
+
+    // Cargo.lock must be in the same directory as Cargo.toml.
+    let manifest = manifest_path.to_str().unwrap();
+    let lock_file = format!("{}.lock", &manifest[0..manifest.len() - 5]);
+    let lock_path = util::find_manifest_file(&PathBuf::from(lock_file), true)?;
+
+    // Graph the project.
     let dot_file = cfg.dot_file.clone();
     let project = Project::with_config(cfg)?;
-    let graph = project.graph()?;
+    let graph = project.graph(manifest_path, lock_path)?;
 
+    // Render the dot file.
     match dot_file {
         None => {
             let o = io::stdout();

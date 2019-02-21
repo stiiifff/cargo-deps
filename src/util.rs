@@ -15,7 +15,7 @@ pub fn toml_from_file<P: AsRef<Path>>(p: P) -> CliResult<Value> {
     Ok(toml)
 }
 
-pub fn find_manifest_file(file: &str) -> CliResult<PathBuf> {
+pub fn find_manifest_file(file: &PathBuf, is_lock: bool) -> CliResult<PathBuf> {
     let pwd = env::current_dir()?;
     let mut dir = pwd.clone();
 
@@ -28,16 +28,14 @@ pub fn find_manifest_file(file: &str) -> CliResult<PathBuf> {
         }
 
         let parent = dir.parent();
-        if parent.is_none() {
-            break;
+        if is_lock || parent.is_none() {
+            return Err(CliError::Generic(format!(
+                "Could not find `{}` in `{}` or any \
+                 parent directory",
+                file.to_str().unwrap(),
+                pwd.display()
+            )));
         }
         dir = parent.unwrap().to_path_buf();
     }
-
-    Err(CliError::Generic(format!(
-        "Could not find `{}` in `{}` or any \
-         parent directory",
-        file,
-        pwd.display()
-    )))
 }

@@ -3,6 +3,7 @@ use crate::dep::{DeclaredDep, DepKind};
 use crate::error::{CliError, CliResult};
 use crate::graph::DepGraph;
 use crate::util;
+use std::path::PathBuf;
 use toml::Value;
 
 #[derive(Debug)]
@@ -15,10 +16,10 @@ impl Project {
         Ok(Project { cfg })
     }
 
-    pub fn graph(self) -> CliResult<DepGraph> {
-        let (root_deps, root_name, root_version) = self.parse_root_deps()?;
+    pub fn graph(self, manifest_path: PathBuf, lock_path: PathBuf) -> CliResult<DepGraph> {
+        let (root_deps, root_name, root_version) = self.parse_root_deps(&manifest_path)?;
 
-        let mut dg = self.parse_lock_file()?;
+        let mut dg = self.parse_lock_file(lock_path)?;
 
         // Set node 0 to be the root.
         if !dg.set_root(&root_name, &root_version) {
@@ -81,7 +82,7 @@ impl Project {
     }
 
     /// Builds a graph of the resolved dependencies declared in the lock file.
-    fn parse_lock_file(&self) -> CliResult<DepGraph> {
+    fn parse_lock_file(&self, lock_path: PathBuf) -> CliResult<DepGraph> {
         fn parse_package(dg: &mut DepGraph, pkg: &Value) {
             let name = pkg
                 .get("name")
@@ -114,9 +115,6 @@ impl Project {
             }
         }
 
-        let manifest = &self.cfg.manifest_path;
-        let lock_file = format!("{}.lock", &manifest[0..manifest.len() - 5]);
-        let lock_path = util::find_manifest_file(&lock_file)?;
         let lock_toml = util::toml_from_file(lock_path)?;
 
         let mut dg = DepGraph::new(self.cfg.clone());
@@ -135,8 +133,10 @@ impl Project {
     }
 
     /// Builds a list of the dependencies declared in the manifest file.
-    pub fn parse_root_deps(&self) -> CliResult<(Vec<DeclaredDep>, String, String)> {
-        let manifest_path = util::find_manifest_file(&self.cfg.manifest_path)?;
+    pub fn parse_root_deps(
+        &self,
+        manifest_path: &PathBuf,
+    ) -> CliResult<(Vec<DeclaredDep>, String, String)> {
         let manifest_toml = util::toml_from_file(manifest_path)?;
 
         let mut declared_deps = vec![];
