@@ -79,12 +79,12 @@ fn execute(cfg: Config) -> CliResult<()> {
     }
 
     // Search through parent dirs for Cargo.toml.
-    let manifest_path = util::find_manifest_file(&manifest_path, false)?;
+    let manifest_path = util::find_manifest_file(&manifest_path)?;
 
-    // Cargo.lock must be in the same directory as Cargo.toml.
+    // Cargo.lock must be in the same directory as Cargo.toml or in a parent directory.
     let manifest = manifest_path.to_str().unwrap();
     let lock_file = format!("{}.lock", &manifest[0..manifest.len() - 5]);
-    let lock_path = util::find_manifest_file(&PathBuf::from(lock_file), true)?;
+    let lock_path = util::find_manifest_file(&PathBuf::from(lock_file))?;
 
     // Graph the project.
     let dot_file = cfg.dot_file.clone();

@@ -15,27 +15,31 @@ pub fn toml_from_file<P: AsRef<Path>>(p: P) -> CliResult<Value> {
     Ok(toml)
 }
 
-pub fn find_manifest_file(file: &PathBuf, is_lock: bool) -> CliResult<PathBuf> {
+pub fn find_manifest_file(file: &PathBuf) -> CliResult<PathBuf> {
     let pwd = env::current_dir()?;
-    let mut dir = pwd.clone();
+    let manifest = pwd.join(file);
+    let file_name = manifest.file_name().unwrap();
+    let mut dir = manifest.parent().unwrap().to_path_buf();
 
     loop {
-        let manifest = dir.join(file);
+        let manifest = dir.join(file_name);
+
         if let Ok(metadata) = fs::metadata(&manifest) {
             if metadata.is_file() {
                 return Ok(manifest);
             }
         }
 
-        let parent = dir.parent();
-        if is_lock || parent.is_none() {
-            return Err(CliError::Generic(format!(
-                "Could not find `{}` in `{}` or any \
-                 parent directory",
-                file.to_str().unwrap(),
-                pwd.display()
-            )));
-        }
-        dir = parent.unwrap().to_path_buf();
+        dir = match dir.parent() {
+            None => {
+                return Err(CliError::Generic(format!(
+                    "Could not find `{}` in `{}` or any \
+                     parent directory",
+                    file.to_str().unwrap(),
+                    pwd.display()
+                )));
+            }
+            Some(ref dir) => dir.to_path_buf(),
+        };
     }
 }
