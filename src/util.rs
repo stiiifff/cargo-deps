@@ -20,14 +20,28 @@ pub fn find_manifest_file(file: &PathBuf) -> CliResult<PathBuf> {
     let manifest = pwd.join(file);
     let file_name = manifest.file_name().unwrap();
     let mut dir = manifest.parent().unwrap().to_path_buf();
+    let mut first_try = true;
 
     loop {
         let manifest = dir.join(file_name);
 
         if let Ok(metadata) = fs::metadata(&manifest) {
             if metadata.is_file() {
+                if !first_try {
+                    eprintln!("Found {:?} in '{}'.", file_name, dir.display());
+                }
+
                 return Ok(manifest);
             }
+        }
+
+        if first_try {
+            eprintln!(
+                "Could not find {:?} in '{}', searching parent directories.",
+                file_name,
+                dir.display()
+            );
+            first_try = false;
         }
 
         dir = match dir.parent() {
@@ -35,7 +49,7 @@ pub fn find_manifest_file(file: &PathBuf) -> CliResult<PathBuf> {
                 return Err(CliError::Generic(format!(
                     "Could not find `{}` in `{}` or any \
                      parent directory",
-                    file.to_str().unwrap(),
+                    file.display(),
                     pwd.display()
                 )));
             }
