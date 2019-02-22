@@ -42,9 +42,12 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
                  --no-color 'Disable color output. Equivalent to setting the NO_COLOR environment \
                  variable'
 
-                 --no-build-deps 'Should build deps be excluded from the graph?'
-                 --dev-deps 'Should dev deps be in the graph?'
-                 --optional-deps 'Should optional deps be in the graph?'",
+                 --all-deps 'Include all dependencies in the graph. \
+                 Can be used with --no-regular-deps'
+                 --no-regular-deps 'Exclude regular dependencies from the graph'
+                 --build-deps 'Include build dependencies in the graph (purple)'
+                 --dev-deps 'Include dev dependencies in the graph (blue)'
+                 --optional-deps 'Include optional dependencies in the graph (red)'",
         )
         .args(&[
             Arg::from_usage("--manifest-path [PATH] 'Specify location of manifest file'")

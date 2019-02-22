@@ -12,18 +12,19 @@ pub struct Edge(pub Node, pub Node);
 
 impl Edge {
     pub fn label<W: Write>(&self, w: &mut W, dg: &DepGraph) -> io::Result<()> {
-        use crate::dep::DepKind::{Build, Dev, Optional};
+        use crate::dep::DepKind::{Regular, Build, Dev, Optional};
 
         let parent = dg.get(self.0).unwrap().kind();
         let child = dg.get(self.1).unwrap().kind();
 
         match (parent, child) {
-            (Build, Build) => writeln!(w, "[label=\"\"];"),
-            (Dev, _) | (Build, Dev) => writeln!(w, "[label=\"\",color=blue,style=dashed];"),
-            (Optional, _) | (Build, Optional) => {
+            (Regular, Regular) => writeln!(w, "[label=\"\"];"),
+            (Build, _) | (Regular, Build) => writeln!(w, "[label=\"\",color=purple,style=dashed];"),
+            (Dev, _) | (Regular, Dev) => writeln!(w, "[label=\"\",color=blue,style=dashed];"),
+            (Optional, _) | (Regular, Optional) => {
                 writeln!(w, "[label=\"\",color=red,style=dashed];")
             }
-            _ => writeln!(w, "[label=\"\",color=purple,style=dashed];"),
+            _ => writeln!(w, "[label=\"\",color=orange,style=dashed];"),
         }
     }
 }
@@ -59,7 +60,7 @@ impl DepGraph {
             .map(|dd| (&*dd.name, dd.kind))
             .collect::<HashMap<_, _>>();
 
-        self.nodes[0].is_build = true;
+        self.nodes[0].is_regular = true;
 
         // Make sure to process edges from the root node first.
         // Sorts by ID of first node first, then by second node.
@@ -74,6 +75,7 @@ impl DepGraph {
                     // set the kind based on how the dependency is declared in the manifest file.
                     if let Some(kind) = declared_deps_map.get(&*self.nodes[ed.1].name) {
                         match *kind {
+                            DepKind::Regular => self.nodes[ed.1].is_regular = true,
                             DepKind::Build => self.nodes[ed.1].is_build = true,
                             DepKind::Dev => self.nodes[ed.1].is_dev = true,
                             DepKind::Optional => self.nodes[ed.1].is_optional = true,
@@ -81,20 +83,21 @@ impl DepGraph {
                         }
                     }
                 } else {
-                    // If this is an edge from a dependency node, propagate the kind. This is a set of
-                    // flags because a dependency can appear several times in the graph, and the kind of
-                    // dependency may vary based on the path to that dependency. The flags start at
-                    // false, and once they become true, they stay true. ResolvedDep::kind() will pick a
-                    // kind based on their priority.
+                    // If this is an edge from a dependency node, propagate the kind. This is a set
+                    // of flags because a dependency can appear several times in the graph, and the
+                    // kind of dependency may vary based on the path to that dependency. The flags
+                    // start at false, and once they become true, they stay true.
+                    // ResolvedDep::kind() will pick a kind based on their priority.
 
+                    if self.nodes[ed.0].is_regular {
+                        self.nodes[ed.1].is_regular = true;
+                    }
                     if self.nodes[ed.0].is_build {
                         self.nodes[ed.1].is_build = true;
                     }
-
                     if self.nodes[ed.0].is_dev {
                         self.nodes[ed.1].is_dev = true;
                     }
-
                     if self.nodes[ed.0].is_optional {
                         self.nodes[ed.1].is_optional = true;
                     }
@@ -106,9 +109,11 @@ impl DepGraph {
         // Start at 1 to keep the root node.
         for id in (1..self.nodes.len()).rev() {
             let kind = self.nodes[id].kind();
-            if (kind == DepKind::Build && !self.cfg.build_deps)
+            if (kind == DepKind::Regular && !self.cfg.regular_deps)
+                || (kind == DepKind::Build && !self.cfg.build_deps)
                 || (kind == DepKind::Dev && !self.cfg.dev_deps)
                 || (kind == DepKind::Optional && !self.cfg.optional_deps)
+                || kind == DepKind::Unknown
             {
                 self.remove(id);
             }

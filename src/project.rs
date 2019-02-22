@@ -19,7 +19,7 @@ impl Project {
     pub fn graph(self, manifest_path: PathBuf, lock_path: PathBuf) -> CliResult<DepGraph> {
         let (root_deps, root_name, root_version) = self.parse_root_deps(&manifest_path)?;
 
-        let mut dg = self.parse_lock_file(lock_path)?;
+        let mut dg = self.parse_lock_file(lock_path, &root_deps, &root_name, &root_version)?;
 
         // Set node 0 to be the root.
         if !dg.set_root(&root_name, &root_version) {
@@ -31,25 +31,6 @@ impl Project {
 
         if !self.cfg.include_vers {
             dg.show_version_on_duplicates();
-        }
-
-        Ok(dg)
-    }
-
-    /// Builds a graph of the resolved dependencies declared in the lock file.
-    fn parse_lock_file(&self, lock_path: PathBuf) -> CliResult<DepGraph> {
-        let lock_toml = util::toml_from_file(lock_path)?;
-
-        let mut dg = DepGraph::new(self.cfg.clone());
-
-        if let Some(root) = lock_toml.get("root") {
-            parse_package(&mut dg, root);
-        }
-
-        if let Some(&Value::Array(ref packages)) = lock_toml.get("package") {
-            for pkg in packages {
-                parse_package(&mut dg, pkg);
-            }
         }
 
         Ok(dg)
@@ -90,29 +71,76 @@ impl Project {
             if let Some(table) = table.as_table() {
                 for (name, dep_table) in table.iter() {
                     if let Some(&Value::Boolean(true)) = dep_table.get("optional") {
-                        declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Optional));
-                    } else {
-                        declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Build));
+                        if self.cfg.optional_deps {
+                            declared_deps
+                                .push(DeclaredDep::with_kind(name.clone(), DepKind::Optional));
+                        }
+                    } else if self.cfg.regular_deps {
+                        declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Regular));
                     }
                     v.push(name.clone());
                 }
             }
         }
 
-        if let Some(table) = manifest_toml.get("dev-dependencies") {
-            if let Some(table) = table.as_table() {
-                for (name, _) in table.iter() {
-                    declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Dev));
-                    v.push(name.clone());
+        if self.cfg.dev_deps {
+            if let Some(table) = manifest_toml.get("dev-dependencies") {
+                if let Some(table) = table.as_table() {
+                    for (name, _) in table.iter() {
+                        declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Dev));
+                        v.push(name.clone());
+                    }
+                }
+            }
+        }
+
+        if self.cfg.build_deps {
+            if let Some(table) = manifest_toml.get("build-dependencies") {
+                if let Some(table) = table.as_table() {
+                    for (name, _) in table.iter() {
+                        declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Build));
+                        v.push(name.clone());
+                    }
                 }
             }
         }
 
         Ok((declared_deps, root_name, root_version))
     }
+
+    /// Builds a graph of the resolved dependencies declared in the lock file.
+    fn parse_lock_file(
+        &self,
+        lock_path: PathBuf,
+        root_deps: &[DeclaredDep],
+        name: &str,
+        ver: &str,
+    ) -> CliResult<DepGraph> {
+        let lock_toml = util::toml_from_file(lock_path)?;
+
+        let mut dg = DepGraph::new(self.cfg.clone());
+
+        if let Some(root) = lock_toml.get("root") {
+            parse_package(&mut dg, root, root_deps, name, ver);
+        }
+
+        if let Some(&Value::Array(ref packages)) = lock_toml.get("package") {
+            for pkg in packages {
+                parse_package(&mut dg, pkg, root_deps, name, ver);
+            }
+        }
+
+        Ok(dg)
+    }
 }
 
-fn parse_package(dg: &mut DepGraph, pkg: &Value) {
+fn parse_package(
+    dg: &mut DepGraph,
+    pkg: &Value,
+    root_deps: &[DeclaredDep],
+    root_name: &str,
+    root_version: &str,
+) {
     let name = pkg
         .get("name")
         .expect("no 'name' field in Cargo.lock [package] or [root] table")
@@ -137,9 +165,16 @@ fn parse_package(dg: &mut DepGraph, pkg: &Value) {
     if let Some(&Value::Array(ref deps)) = pkg.get("dependencies") {
         for dep in deps {
             let dep_vec = dep.as_str().unwrap_or("").split(' ').collect::<Vec<_>>();
-            let dep_string = dep_vec[0].to_owned();
-            let ver = dep_vec[1];
-            dg.add_child(id, &*dep_string, ver);
+            let dep_name = dep_vec[0].to_owned();
+            let dep_ver = dep_vec[1];
+
+            if name == root_name
+                && ver == root_version
+                && !root_deps.iter().any(|dep| dep.name == dep_name)
+            {
+                continue;
+            }
+            dg.add_child(id, &*dep_name, dep_ver);
         }
     }
 }

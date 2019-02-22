@@ -1,13 +1,13 @@
 use std::io::{Result, Write};
-
 use crate::config::Config;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum DepKind {
+    Regular,
     Build,
     Dev,
     Optional,
-    Unk,
+    Unknown,
 }
 
 #[derive(Debug)]
@@ -26,10 +26,12 @@ impl DeclaredDep {
 pub struct ResolvedDep {
     pub name: String,
     pub ver: String,
-    pub is_build: bool,
-    pub is_optional: bool,
-    pub is_dev: bool,
     pub force_write_ver: bool,
+
+    pub is_regular: bool,
+    pub is_build: bool,
+    pub is_dev: bool,
+    pub is_optional: bool,
 }
 
 impl ResolvedDep {
@@ -37,37 +39,42 @@ impl ResolvedDep {
         ResolvedDep {
             name,
             ver,
-            is_build: false,
-            is_optional: false,
-            is_dev: false,
             force_write_ver: false,
+
+            is_regular: false,
+            is_build: false,
+            is_dev: false,
+            is_optional: false,
         }
     }
 
     pub fn kind(&self) -> DepKind {
-        if self.is_build {
+        if self.is_regular {
+            DepKind::Regular
+        } else if self.is_build {
             DepKind::Build
         } else if self.is_dev {
             DepKind::Dev
         } else if self.is_optional {
             DepKind::Optional
         } else {
-            DepKind::Unk
+            DepKind::Unknown
         }
     }
 
-    pub fn label<W: Write>(&self, w: &mut W, c: &Config) -> Result<()> {
-        let name = if self.force_write_ver || c.include_vers {
+    pub fn label<W: Write>(&self, w: &mut W, cfg: &Config) -> Result<()> {
+        let name = if self.force_write_ver || cfg.include_vers {
             format!("{} v{}", self.name, self.ver)
         } else {
             self.name.clone()
         };
 
         match self.kind() {
-            DepKind::Build => writeln!(w, "[label=\"{}\"];", name),
+            DepKind::Regular => writeln!(w, "[label=\"{}\"];", name),
+            DepKind::Build => writeln!(w, "[label=\"{}\",color=purple];", name),
             DepKind::Dev => writeln!(w, "[label=\"{}\",color=blue];", name),
             DepKind::Optional => writeln!(w, "[label=\"{}\",color=red];", name),
-            _ => writeln!(w, "[label=\"{}\",color=purple];", name),
+            _ => writeln!(w, "[label=\"{}\",color=orange];", name),
         }
     }
 }

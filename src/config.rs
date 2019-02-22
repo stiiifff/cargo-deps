@@ -8,6 +8,7 @@ pub struct Config {
     pub manifest_path: String,
     pub no_color: bool,
 
+    pub regular_deps: bool,
     pub build_deps: bool,
     pub dev_deps: bool,
     pub optional_deps: bool,
@@ -15,15 +16,18 @@ pub struct Config {
 
 impl Config {
     pub fn from_matches(m: &ArgMatches) -> CliResult<Self> {
+        let all_deps = m.is_present("all-deps");
+
         Ok(Config {
             dot_file: m.value_of("dot-file").map(|s| s.into()),
             include_vers: m.is_present("include-versions"),
             manifest_path: m.value_of("manifest-path").unwrap().into(),
             no_color: m.is_present("no_color"),
 
-            build_deps: !m.is_present("no-build-deps"),
-            dev_deps: m.is_present("dev-deps"),
-            optional_deps: m.is_present("optional-deps"),
+            regular_deps: !m.is_present("no-regular-deps"),
+            build_deps: all_deps || m.is_present("build-deps"),
+            dev_deps: all_deps || m.is_present("dev-deps"),
+            optional_deps: all_deps || m.is_present("optional-deps"),
         })
     }
 }
