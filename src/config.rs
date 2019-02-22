@@ -6,7 +6,6 @@ pub struct Config {
     pub dot_file: Option<String>,
     pub include_vers: bool,
     pub manifest_path: String,
-    pub no_color: bool,
 
     pub regular_deps: bool,
     pub build_deps: bool,
@@ -22,7 +21,6 @@ impl Config {
             dot_file: m.value_of("dot-file").map(|s| s.into()),
             include_vers: m.is_present("include-versions"),
             manifest_path: m.value_of("manifest-path").unwrap().into(),
-            no_color: m.is_present("no_color"),
 
             regular_deps: !m.is_present("no-regular-deps"),
             build_deps: all_deps || m.is_present("build-deps"),

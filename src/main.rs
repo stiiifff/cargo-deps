@@ -8,13 +8,10 @@
     unused_qualifications
 )]
 
-extern crate atty;
 #[macro_use]
 extern crate clap;
-extern crate termcolor;
 extern crate toml;
 
-mod color;
 mod config;
 mod dep;
 mod error;
@@ -39,8 +36,6 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
         .args_from_usage(
             "-I, --include-versions 'Include the dependency version on nodes'
                  --dot-file [PATH] 'Output file (Default stdout)'
-                 --no-color 'Disable color output. Equivalent to setting the NO_COLOR environment \
-                 variable'
 
                  --all-deps 'Include all dependencies in the graph. \
                  Can be used with --no-regular-deps'
@@ -60,10 +55,9 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
 fn main() {
     let m = parse_cli();
 
-    let cfg = Config::from_matches(&m).unwrap_or_else(|e| e.exit(false));
-    let no_color = cfg.no_color;
+    let cfg = Config::from_matches(&m).unwrap_or_else(|e| e.exit());
 
-    execute(cfg).map_err(|e| e.exit(no_color)).unwrap();
+    execute(cfg).map_err(|e| e.exit()).unwrap();
 }
 
 fn execute(cfg: Config) -> CliResult<()> {

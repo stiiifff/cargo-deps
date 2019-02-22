@@ -1,8 +1,6 @@
-use crate::color;
 use std::fmt::Result as FmtResult;
 use std::fmt::{Display, Formatter};
 use std::io;
-use termcolor::{Color, ColorSpec};
 
 pub type CliResult<T> = Result<T, CliError>;
 
@@ -25,13 +23,8 @@ impl Display for CliError {
 
 impl CliError {
     /// Print this error and immediately exit the program.
-    pub fn exit(&self, no_color: bool) -> ! {
-        let mut stderr = color::init_color_stderr(no_color);
-        let mut color = ColorSpec::new();
-        color.set_fg(Some(Color::Red)).set_bold(true);
-
-        color::set_and_unset_color(&mut stderr, "error:", &color);
-        eprintln!(" {}", self);
+    pub fn exit(&self) -> ! {
+        eprintln!("error: {}", self);
         ::std::process::exit(1)
     }
 }
