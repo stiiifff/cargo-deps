@@ -72,7 +72,7 @@ fn execute(cfg: Config) -> CliResult<()> {
     if let Some(file_name) = manifest_path.file_name() {
         if file_name != "Cargo.toml" {
             return Err(CliError::Toml(
-                "The manifest file must be named Cargo.toml".into(),
+                "The manifest-path must be a path to a Cargo.toml file".into(),
             ));
         }
     } else {

@@ -74,15 +74,17 @@ impl ResolvedDep {
         }
     }
 
-    pub fn label<W: Write>(&self, w: &mut W, cfg: &Config) -> Result<()> {
+    pub fn label<W: Write>(&self, w: &mut W, cfg: &Config, i: usize) -> Result<()> {
         let name = if self.force_write_ver || cfg.include_vers {
             format!("{} v{}", self.name, self.ver)
         } else {
             self.name.clone()
         };
 
+        let shape = if i == 0 { ",shape=box" } else { "" };
+
         match self.kind() {
-            DepKind::Regular => writeln!(w, "[label=\"{}\"];", name),
+            DepKind::Regular => writeln!(w, "[label=\"{}\"{}];", name, shape),
             DepKind::Build => writeln!(w, "[label=\"{}\",color=purple];", name),
             DepKind::Dev => writeln!(w, "[label=\"{}\",color=blue];", name),
             DepKind::Optional => writeln!(w, "[label=\"{}\",color=red];", name),

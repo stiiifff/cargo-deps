@@ -354,7 +354,7 @@ impl DepGraph {
         writeln!(output, "digraph dependencies {{")?;
         for (i, dep) in self.nodes.iter().enumerate() {
             write!(output, "\tN{}", i)?;
-            dep.label(output, &self.cfg)?;
+            dep.label(output, &self.cfg, i)?;
         }
         for ed in &self.edges {
             write!(output, "\t{}", ed)?;
