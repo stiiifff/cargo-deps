@@ -16,7 +16,11 @@ impl Project {
         Ok(Project { cfg })
     }
 
-    pub fn graph(self, manifest_path: PathBuf, lock_path: PathBuf) -> CliResult<DepGraph> {
+    pub fn graph(
+        self,
+        manifest_path: PathBuf,
+        lock_path: PathBuf,
+    ) -> CliResult<(DepGraph, Vec<DeclaredDep>)> {
         let (root_deps, root_name, root_version) = self.parse_root_deps(&manifest_path)?;
 
         let mut dg = self.parse_lock_file(lock_path, &root_deps, &root_name, &root_version)?;
@@ -33,7 +37,7 @@ impl Project {
             dg.show_version_on_duplicates();
         }
 
-        Ok(dg)
+        Ok((dg, root_deps))
     }
 
     /// Builds a list of the dependencies declared in the manifest file.

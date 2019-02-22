@@ -1,5 +1,5 @@
-use std::io::{Result, Write};
 use crate::config::Config;
+use std::io::{Result, Write};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum DepKind {
@@ -52,6 +52,18 @@ impl ResolvedDep {
         if self.is_regular {
             DepKind::Regular
         } else if self.is_build {
+            DepKind::Build
+        } else if self.is_dev {
+            DepKind::Dev
+        } else if self.is_optional {
+            DepKind::Optional
+        } else {
+            DepKind::Unknown
+        }
+    }
+
+    pub fn alternate_kind(&self) -> DepKind {
+        if self.is_build {
             DepKind::Build
         } else if self.is_dev {
             DepKind::Dev

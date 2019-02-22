@@ -11,11 +11,30 @@ pub type Node = usize;
 pub struct Edge(pub Node, pub Node);
 
 impl Edge {
-    pub fn label<W: Write>(&self, w: &mut W, dg: &DepGraph) -> io::Result<()> {
-        use crate::dep::DepKind::{Regular, Build, Dev, Optional};
+    pub fn label<W: Write>(
+        &self,
+        w: &mut W,
+        dg: &DepGraph,
+        root_deps: &[DeclaredDep],
+    ) -> io::Result<()> {
+        use crate::dep::DepKind::{Build, Dev, Optional, Regular};
 
         let parent = dg.get(self.0).unwrap().kind();
-        let child = dg.get(self.1).unwrap().kind();
+        let child_dep = dg.get(self.1).unwrap();
+
+        // Special case: always color edge from root to root dep by its alternate dependency kind if
+        // it's not also a regular dep of root. Otherwise, the root dep could also be a dep of a
+        // regular dep which will cause the root -> root dep edge to be regular, which is misleading
+        // as it is not regular in Cargo.toml.
+        let child = if self.0 == 0
+            && !root_deps
+                .iter()
+                .any(|root_dep| root_dep.name == child_dep.name && root_dep.kind == Regular)
+        {
+            child_dep.alternate_kind()
+        } else {
+            child_dep.kind()
+        };
 
         match (parent, child) {
             (Regular, Regular) => writeln!(w, "[label=\"\"];"),
@@ -52,8 +71,7 @@ impl DepGraph {
         }
     }
 
-    /// Sets the kind of dependency on each dependency based on how the dependencies are declared in
-    /// the manifest.
+    /// Sets the kind of each dependency based on how the dependencies are declared in the manifest.
     pub fn set_resolved_kind(&mut self, declared_deps: &[DeclaredDep]) {
         let declared_deps_map = declared_deps
             .iter()
@@ -324,7 +342,11 @@ impl DepGraph {
         self.nodes.len() - 1
     }
 
-    pub fn render_to<W: Write>(mut self, output: &mut W) -> CliResult<()> {
+    pub fn render_to<W: Write>(
+        mut self,
+        output: &mut W,
+        root_deps: &[DeclaredDep],
+    ) -> CliResult<()> {
         self.edges.sort();
         self.edges.dedup();
         self.remove_orphans();
@@ -336,7 +358,7 @@ impl DepGraph {
         }
         for ed in &self.edges {
             write!(output, "\t{}", ed)?;
-            ed.label(output, &self)?;
+            ed.label(output, &self, root_deps)?;
         }
         writeln!(output, "}}")?;
         Ok(())
