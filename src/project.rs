@@ -3,8 +3,11 @@ use crate::dep::{DeclaredDep, DepKind};
 use crate::error::{CliError, CliResult};
 use crate::graph::DepGraph;
 use crate::util;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use toml::Value;
+
+pub type DeclaredDepsMap = HashMap<String, Vec<DepKind>>;
 
 #[derive(Debug)]
 pub struct Project {
@@ -20,7 +23,7 @@ impl Project {
         self,
         manifest_path: PathBuf,
         lock_path: PathBuf,
-    ) -> CliResult<(DepGraph, Vec<DeclaredDep>)> {
+    ) -> CliResult<(DepGraph, DeclaredDepsMap)> {
         let (root_deps, root_name, root_version) = self.parse_root_deps(&manifest_path)?;
 
         let mut dg = self.parse_lock_file(lock_path, &root_deps, &root_name, &root_version)?;
@@ -30,14 +33,21 @@ impl Project {
             return Err(CliError::Toml("Missing name or version".into()));
         }
 
+        let mut root_deps_map = HashMap::new();
+        for dep in root_deps.iter() {
+            let (name, kind) = (dep.name.clone(), dep.kind);
+            let kinds: &mut Vec<DepKind> = root_deps_map.entry(name).or_insert_with(|| vec![]);
+            kinds.push(kind);
+        }
+
         // Set the kind of dependency on each dep.
-        dg.set_resolved_kind(&root_deps);
+        dg.set_resolved_kind(&root_deps_map);
 
         if !self.cfg.include_vers {
             dg.show_version_on_duplicates();
         }
 
-        Ok((dg, root_deps))
+        Ok((dg, root_deps_map))
     }
 
     /// Builds a list of the dependencies declared in the manifest file.

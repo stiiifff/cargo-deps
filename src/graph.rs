@@ -1,6 +1,7 @@
 use crate::config::Config;
-use crate::dep::{DeclaredDep, DepKind, ResolvedDep};
+use crate::dep::{DepKind, ResolvedDep};
 use crate::error::CliResult;
+use crate::project::DeclaredDepsMap;
 use std::collections::HashMap;
 use std::fmt;
 use std::io::{self, Write};
@@ -15,23 +16,30 @@ impl Edge {
         &self,
         w: &mut W,
         dg: &DepGraph,
-        root_deps: &[DeclaredDep],
+        root_deps_map: &DeclaredDepsMap,
     ) -> io::Result<()> {
-        use crate::dep::DepKind::{Build, Dev, Optional, Regular};
+        use crate::dep::DepKind::{Build, Dev, Optional, Regular, Unknown};
 
         let parent = dg.get(self.0).unwrap().kind();
         let child_dep = dg.get(self.1).unwrap();
 
-        // Special case: always color edge from root to root dep by its alternate dependency kind if
-        // it's not also a regular dep of root. Otherwise, the root dep could also be a dep of a
-        // regular dep which will cause the root -> root dep edge to be regular, which is misleading
-        // as it is not regular in Cargo.toml.
-        let child = if self.0 == 0
-            && !root_deps
-                .iter()
-                .any(|root_dep| root_dep.name == child_dep.name && root_dep.kind == Regular)
-        {
-            child_dep.alternate_kind()
+        // Special case: always color edge from root to root dep by its actual root dependency kind.
+        // Otherwise, the root dep could also be a dep of a regular dep which will cause the root ->
+        // root dep edge to appear regular, which is misleading as it is not regular in Cargo.toml.
+        let child = if self.0 == 0 {
+            let kinds = root_deps_map.get(&child_dep.name).unwrap();
+
+            if kinds.contains(&Regular) {
+                Regular
+            } else if kinds.contains(&Build) {
+                Build
+            } else if kinds.contains(&Dev) {
+                Dev
+            } else if kinds.contains(&Optional) {
+                Optional
+            } else {
+                Unknown
+            }
         } else {
             child_dep.kind()
         };
@@ -72,12 +80,7 @@ impl DepGraph {
     }
 
     /// Sets the kind of each dependency based on how the dependencies are declared in the manifest.
-    pub fn set_resolved_kind(&mut self, declared_deps: &[DeclaredDep]) {
-        let declared_deps_map = declared_deps
-            .iter()
-            .map(|dd| (&*dd.name, dd.kind))
-            .collect::<HashMap<_, _>>();
-
+    pub fn set_resolved_kind(&mut self, declared_deps_map: &HashMap<String, Vec<DepKind>>) {
         self.nodes[0].is_regular = true;
 
         // Make sure to process edges from the root node first.
@@ -91,13 +94,15 @@ impl DepGraph {
                 if ed.0 == 0 {
                     // If this is an edge from the root node,
                     // set the kind based on how the dependency is declared in the manifest file.
-                    if let Some(kind) = declared_deps_map.get(&*self.nodes[ed.1].name) {
-                        match *kind {
-                            DepKind::Regular => self.nodes[ed.1].is_regular = true,
-                            DepKind::Build => self.nodes[ed.1].is_build = true,
-                            DepKind::Dev => self.nodes[ed.1].is_dev = true,
-                            DepKind::Optional => self.nodes[ed.1].is_optional = true,
-                            _ => (),
+                    if let Some(kinds) = declared_deps_map.get(&*self.nodes[ed.1].name) {
+                        for kind in kinds {
+                            match *kind {
+                                DepKind::Regular => self.nodes[ed.1].is_regular = true,
+                                DepKind::Build => self.nodes[ed.1].is_build = true,
+                                DepKind::Dev => self.nodes[ed.1].is_dev = true,
+                                DepKind::Optional => self.nodes[ed.1].is_optional = true,
+                                _ => (),
+                            }
                         }
                     }
                 } else {
@@ -345,12 +350,13 @@ impl DepGraph {
     pub fn render_to<W: Write>(
         mut self,
         output: &mut W,
-        root_deps: &[DeclaredDep],
+        root_deps_map: &DeclaredDepsMap,
     ) -> CliResult<()> {
         self.edges.sort();
         self.edges.dedup();
         self.remove_orphans();
         self.remove_self_pointing();
+
         writeln!(output, "digraph dependencies {{")?;
         for (i, dep) in self.nodes.iter().enumerate() {
             write!(output, "\tN{}", i)?;
@@ -358,9 +364,10 @@ impl DepGraph {
         }
         for ed in &self.edges {
             write!(output, "\t{}", ed)?;
-            ed.label(output, &self, root_deps)?;
+            ed.label(output, &self, root_deps_map)?;
         }
         writeln!(output, "}}")?;
+
         Ok(())
     }
 }

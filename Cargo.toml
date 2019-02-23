@@ -1,8 +1,8 @@
 [package]
 authors = [
+    "Marcin S. <marcin.swieczkowski@gmail.com>",
     "Kevin K. <kbknapp@gmail.com>",
     "Max New <maxsnew@gmail.com>",
-    "Marcin S. <marcin.swieczkowski@gmail.com>",
 ]
 categories = ["development-tools", "development-tools::cargo-plugins"]
 description = "Cargo subcommand for building dependency graphs of Rust projects."

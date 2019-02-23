@@ -62,18 +62,6 @@ impl ResolvedDep {
         }
     }
 
-    pub fn alternate_kind(&self) -> DepKind {
-        if self.is_build {
-            DepKind::Build
-        } else if self.is_dev {
-            DepKind::Dev
-        } else if self.is_optional {
-            DepKind::Optional
-        } else {
-            DepKind::Unknown
-        }
-    }
-
     pub fn label<W: Write>(&self, w: &mut W, cfg: &Config, i: usize) -> Result<()> {
         let name = if self.force_write_ver || cfg.include_vers {
             format!("{} v{}", self.name, self.ver)

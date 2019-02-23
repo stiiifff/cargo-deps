@@ -86,19 +86,19 @@ fn execute(cfg: Config) -> CliResult<()> {
     // Graph the project.
     let dot_file = cfg.dot_file.clone();
     let project = Project::with_config(cfg)?;
-    let (graph, root_deps) = project.graph(manifest_path, lock_path)?;
+    let (graph, root_deps_map) = project.graph(manifest_path, lock_path)?;
 
     // Render the dot file.
     match dot_file {
         None => {
             let o = io::stdout();
             let mut bw = BufWriter::new(o.lock());
-            graph.render_to(&mut bw, &root_deps)
+            graph.render_to(&mut bw, &root_deps_map)
         }
         Some(file) => {
             let o = File::create(&Path::new(&file)).expect("Failed to create file");
             let mut bw = BufWriter::new(o);
-            graph.render_to(&mut bw, &root_deps)
+            graph.render_to(&mut bw, &root_deps_map)
         }
     }
 }
