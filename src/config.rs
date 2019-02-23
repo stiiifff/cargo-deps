@@ -5,6 +5,7 @@ use clap::ArgMatches;
 pub struct Config {
     pub dot_file: Option<String>,
     pub filter: Option<Vec<String>>,
+    pub include_orphans: bool,
     pub include_vers: bool,
     pub manifest_path: String,
 
@@ -23,6 +24,7 @@ impl Config {
             filter: m
                 .values_of("filter")
                 .map(|deps| deps.map(|dep| dep.into()).collect()),
+            include_orphans: m.is_present("include-orphans"),
             include_vers: m.is_present("include-versions"),
             manifest_path: m.value_of("manifest-path").unwrap().into(),
 

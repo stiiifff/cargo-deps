@@ -127,8 +127,6 @@ impl DepGraph {
                 }
             }
         }
-
-        self.remove_orphans();
     }
 
     /// Forces the version to be displayed on dependencies that have the same name (but a different
@@ -187,42 +185,6 @@ impl DepGraph {
             return Some(&self.nodes[id]);
         }
         None
-    }
-
-    pub fn remove(&mut self, id: usize) {
-        self.nodes.remove(id);
-        // Remove edges of the removed node.
-        self.edges = self
-            .edges
-            .iter()
-            .filter(|e| !(e.0 == id || e.1 == id))
-            .cloned()
-            .collect();
-        self.shift_edges_after_node(id);
-    }
-
-    fn shift_edges_after_node(&mut self, id: usize) {
-        enum Side {
-            Left,
-            Right,
-        }
-        let mut to_upd = vec![];
-        for c in id..self.nodes.len() {
-            for (eid, &Edge(idl, idr)) in self.edges.iter().enumerate() {
-                if idl == c {
-                    to_upd.push((eid, Side::Left, c - 1));
-                }
-                if idr == c {
-                    to_upd.push((eid, Side::Right, c - 1));
-                }
-            }
-        }
-        for (eid, side, new) in to_upd {
-            match side {
-                Side::Left => self.edges[eid].0 = new,
-                Side::Right => self.edges[eid].1 = new,
-            }
-        }
     }
 
     pub fn remove_orphans(&mut self) {
@@ -340,7 +302,9 @@ impl DepGraph {
     ) -> CliResult<()> {
         self.edges.sort();
         self.edges.dedup();
-        self.remove_orphans();
+        if !self.cfg.include_orphans {
+            self.remove_orphans();
+        }
         self.remove_self_pointing();
 
         writeln!(output, "digraph dependencies {{")?;

@@ -37,6 +37,7 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
             "
                  --dot-file [PATH] 'Output file (Default stdout)'
                  --filter [DEPNAMES] ... 'Only display provided deps'
+                 --include-orphans 'Don't purge orphan nodes (useful in some workspaces)'
              -I, --include-versions 'Include the dependency version on nodes'
 
                  --all-deps 'Include all dependencies in the graph. \
