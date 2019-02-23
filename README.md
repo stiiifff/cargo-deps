@@ -26,7 +26,7 @@ cargo deps | dot -Tpng >| graph.png
 
 That's it! `graph.png` will contain the graph (you can change its name, of course!)
 
-### Settings
+### Dependency Kinds
 
 The default behavior is to exclude optional, dev, and build dependencies. To see all dependencies, pass `--all-deps`:
 
@@ -53,14 +53,26 @@ For example, if a dependency is both a build and a dev dependency, then it will 
 
 Some Rust projects have really big dependency trees and maybe you just want to display certain dependencies, like the ones in the same workspace. Fortunately, `cargo-deps` provides the `--filter` option for this use case. Unfortunately, you have to explicitly list all the dependencies you want to keep, and `cargo-deps` doesn't detect workspaces just yet.
 
-### Example
+### Subgraphs
 
-**Tokei:** [no regular dependencies](tokei.png)
+You can visually group a set of dependencies by using the `--subgraph` command.
+
+### Examples
+
+**[Tokei](https://github.com/Aaronepower/tokei)** -- [graph](tokei.png)
 
 This was generated using the command:
 
 ```
 cargo deps -I --all-deps --no-regular-deps | dot -Tpng >| tokei.png
+```
+
+**[SAFE Client Libs](https://github.com/maidsafe/safe_client_libs)** -- [graph](safe-client-libs.png)
+
+This was generated using the following whopper of a command to display only MaidSafe dependencies:
+
+```
+cargo deps --all-deps --include-orphans --subgraph safe_app safe_app_jni safe_authenticator safe_authenticator_jni safe_core --subgraph-name "SAFE Client Libs" --filter accumulator config_file_handler crust ffi_utils fake_clock lru_time_cache maidsafe_utilities parsec resource_proof routing rust_sodium safe_app safe_app_jni safe_authenticator safe_authenticator_jni safe_bindgen safe_core safe_crypto safe_vault secure_serialisation self_encryption system_uri tokio_utp --manifest-path safe_app/Cargo.toml | dot -Tpng -Nfontname=Iosevka -Gfontname=Iosevka >| safe-client-libs.png
 ```
 
 ### More info

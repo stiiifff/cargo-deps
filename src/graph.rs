@@ -45,13 +45,11 @@ impl Edge {
         };
 
         match (parent, child) {
-            (Regular, Regular) => writeln!(w, "[label=\"\"];"),
-            (Build, _) | (Regular, Build) => writeln!(w, "[label=\"\",color=purple,style=dashed];"),
-            (Dev, _) | (Regular, Dev) => writeln!(w, "[label=\"\",color=blue,style=dashed];"),
-            (Optional, _) | (Regular, Optional) => {
-                writeln!(w, "[label=\"\",color=red,style=dashed];")
-            }
-            _ => writeln!(w, "[label=\"\",color=orange,style=dashed];"),
+            (Regular, Regular) => writeln!(w, ";"),
+            (Build, _) | (Regular, Build) => writeln!(w, " [color=purple, style=dashed];"),
+            (Dev, _) | (Regular, Dev) => writeln!(w, " [color=blue, style=dashed];"),
+            (Optional, _) | (Regular, Optional) => writeln!(w, " [color=red, style=dashed];"),
+            _ => writeln!(w, " [color=orange, style=dashed];"),
         }
     }
 }
@@ -59,7 +57,7 @@ impl Edge {
 impl fmt::Display for Edge {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let &Edge(il, ir) = self;
-        write!(f, "N{} -> N{}", il, ir)
+        write!(f, "n{} -> n{}", il, ir)
     }
 }
 
@@ -309,9 +307,29 @@ impl DepGraph {
 
         writeln!(output, "digraph dependencies {{")?;
         for (i, dep) in self.nodes.iter().enumerate() {
-            write!(output, "\tN{}", i)?;
+            write!(output, "\tn{}", i)?;
             dep.label(output, &self.cfg, i)?;
         }
+        writeln!(output)?;
+
+        if let Some(sub_deps) = &self.cfg.subgraph {
+            writeln!(output, "\tsubgraph cluster_subgraph {{")?;
+            if let Some(sub_name) = &self.cfg.subgraph_name {
+                writeln!(output, "\t\tlabel=\"{}\";", sub_name)?;
+            }
+            writeln!(output, "\t\tcolor=brown;")?;
+            writeln!(output, "\t\tstyle=dashed;")?;
+
+            for (i, dep) in self.nodes.iter().enumerate() {
+                if sub_deps.contains(&dep.name) {
+                    write!(output, "\t\tn{}", i)?;
+                    dep.label(output, &self.cfg, i)?;
+                }
+            }
+
+            writeln!(output, "\t}}\n")?;
+        }
+
         for ed in &self.edges {
             write!(output, "\t{}", ed)?;
             ed.label(output, &self, root_deps_map)?;

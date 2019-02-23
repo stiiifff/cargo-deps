@@ -69,14 +69,14 @@ impl ResolvedDep {
             self.name.clone()
         };
 
-        let shape = if i == 0 { ",shape=box" } else { "" };
+        let shape = if i == 0 { ", shape=box" } else { "" };
 
         match self.kind() {
-            DepKind::Regular => writeln!(w, "[label=\"{}\"{}];", name, shape),
-            DepKind::Build => writeln!(w, "[label=\"{}\",color=purple];", name),
-            DepKind::Dev => writeln!(w, "[label=\"{}\",color=blue];", name),
-            DepKind::Optional => writeln!(w, "[label=\"{}\",color=red];", name),
-            _ => writeln!(w, "[label=\"{}\",color=orange];", name),
+            DepKind::Regular => writeln!(w, " [label=\"{}\"{}];", name, shape),
+            DepKind::Build => writeln!(w, " [label=\"{}\", color=purple];", name),
+            DepKind::Dev => writeln!(w, " [label=\"{}\", color=blue];", name),
+            DepKind::Optional => writeln!(w, " [label=\"{}\", color=red];", name),
+            _ => writeln!(w, " [label=\"{}\", color=orange];", name),
         }
     }
 }

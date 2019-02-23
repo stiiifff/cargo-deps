@@ -35,10 +35,12 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
         .about(crate_description!())
         .args_from_usage(
             "
-                 --dot-file [PATH] 'Output file (Default stdout)'
+             -o  --dot-file [PATH] 'Output file [default: stdout]'
                  --filter [DEPNAMES] ... 'Only display provided deps'
-                 --include-orphans 'Don't purge orphan nodes (useful in some workspaces)'
+                 --include-orphans 'Don't purge orphan nodes (yellow). \
+                 This is useful in some workspaces'
              -I, --include-versions 'Include the dependency version on nodes'
+                 --subgraph [DEPNAMES] ... 'Group provided deps in their own subgraph'
 
                  --all-deps 'Include all dependencies in the graph. \
                  Can be used with --no-regular-deps'
@@ -52,6 +54,8 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
             Arg::from_usage("--manifest-path [PATH] 'Specify location of manifest file'")
                 .default_value("Cargo.toml")
                 .validator(is_file),
+            Arg::from_usage("--subgraph-name [NAME] 'Optional name of subgraph'")
+                .requires("subgraph"),
         ])
         .get_matches()
 }
