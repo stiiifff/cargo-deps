@@ -68,9 +68,10 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
 fn main() {
     let m = parse_cli();
 
-    let cfg = Config::from_matches(&m).unwrap_or_else(|e| e.exit());
-
-    execute(cfg).map_err(|e| e.exit()).unwrap();
+    if let Some(m) = m.subcommand_matches("deps") {
+        let cfg = Config::from_matches(&m).unwrap_or_else(|e| e.exit());
+        execute(cfg).map_err(|e| e.exit()).unwrap();
+    }
 }
 
 fn execute(cfg: Config) -> CliResult<()> {
