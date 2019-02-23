@@ -39,20 +39,20 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
                 .about(crate_description!())
                 .args_from_usage(
                     "
-             -o  --dot-file [PATH] 'Output file [default: stdout]'
-                 --filter [DEPNAMES] ... 'Only display provided deps'
-                 --include-orphans 'Don't purge orphan nodes (yellow). \
-                 This is useful in some workspaces'
-             -I, --include-versions 'Include the dependency version on nodes'
-                 --subgraph [DEPNAMES] ... 'Group provided deps in their own subgraph'
+                    -o  --dot-file [PATH] 'Output file [default: stdout]'
+                        --filter [DEPNAMES] ... 'Only display provided deps'
+                        --include-orphans 'Don't purge orphan nodes (yellow). \
+                        This is useful in some workspaces'
+                    -I, --include-versions 'Include the dependency version on nodes'
+                        --subgraph [DEPNAMES] ... 'Group provided deps in their own subgraph'
 
-                 --all-deps 'Include all dependencies in the graph. \
-                 Can be used with --no-regular-deps'
-                 --no-regular-deps 'Exclude regular dependencies from the graph'
-                 --build-deps 'Include build dependencies in the graph (purple)'
-                 --dev-deps 'Include dev dependencies in the graph (blue)'
-                 --optional-deps 'Include optional dependencies in the graph (red)'
-            ",
+                        --all-deps 'Include all dependencies in the graph. \
+                        Can be used with --no-regular-deps'
+                        --no-regular-deps 'Exclude regular dependencies from the graph'
+                        --build-deps 'Include build dependencies in the graph (purple)'
+                        --dev-deps 'Include dev dependencies in the graph (blue)'
+                        --optional-deps 'Include optional dependencies in the graph (red)'
+                    ",
                 )
                 .args(&[
                     Arg::from_usage("--manifest-path [PATH] 'Specify location of manifest file'")

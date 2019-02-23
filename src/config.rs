@@ -28,7 +28,7 @@ impl Config {
                 .map(|deps| deps.map(|dep| dep.into()).collect()),
             include_orphans: m.is_present("include-orphans"),
             include_vers: m.is_present("include-versions"),
-            manifest_path: m.value_of("manifest-path").unwrap().into(),
+            manifest_path: m.value_of("manifest-path").unwrap_or("Cargo.toml").into(),
             subgraph: m
                 .values_of("subgraph")
                 .map(|deps| deps.map(|dep| dep.into()).collect()),
