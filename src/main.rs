@@ -22,7 +22,7 @@ mod util;
 use crate::config::Config;
 use crate::error::{CliError, CliResult};
 use crate::project::Project;
-use clap::{App, Arg, ArgMatches};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::fs::File;
 use std::io::{self, BufWriter};
 use std::path::Path;
@@ -31,10 +31,14 @@ use std::path::PathBuf;
 fn parse_cli<'a>() -> ArgMatches<'a> {
     App::new("cargo-deps")
         .version(crate_version!())
-        .author(crate_authors!())
-        .about(crate_description!())
-        .args_from_usage(
-            "
+        .bin_name("cargo")
+        .settings(&[AppSettings::GlobalVersion, AppSettings::SubcommandRequired])
+        .subcommand(
+            SubCommand::with_name("deps")
+                .author(crate_authors!())
+                .about(crate_description!())
+                .args_from_usage(
+                    "
              -o  --dot-file [PATH] 'Output file [default: stdout]'
                  --filter [DEPNAMES] ... 'Only display provided deps'
                  --include-orphans 'Don't purge orphan nodes (yellow). \
@@ -49,14 +53,15 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
                  --dev-deps 'Include dev dependencies in the graph (blue)'
                  --optional-deps 'Include optional dependencies in the graph (red)'
             ",
+                )
+                .args(&[
+                    Arg::from_usage("--manifest-path [PATH] 'Specify location of manifest file'")
+                        .default_value("Cargo.toml")
+                        .validator(is_file),
+                    Arg::from_usage("--subgraph-name [NAME] 'Optional name of subgraph'")
+                        .requires("subgraph"),
+                ]),
         )
-        .args(&[
-            Arg::from_usage("--manifest-path [PATH] 'Specify location of manifest file'")
-                .default_value("Cargo.toml")
-                .validator(is_file),
-            Arg::from_usage("--subgraph-name [NAME] 'Optional name of subgraph'")
-                .requires("subgraph"),
-        ])
         .get_matches()
 }
 
