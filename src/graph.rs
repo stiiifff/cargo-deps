@@ -67,7 +67,7 @@ impl fmt::Display for Edge {
 pub struct DepGraph {
     pub nodes: Vec<ResolvedDep>,
     pub edges: Vec<Edge>,
-    cfg: Config,
+    pub cfg: Config,
 }
 
 impl DepGraph {
@@ -125,20 +125,6 @@ impl DepGraph {
                         self.nodes[ed.1].is_optional = true;
                     }
                 }
-            }
-        }
-
-        // Remove the nodes that the user doesn't want.
-        // Start at 1 to keep the root node.
-        for id in (1..self.nodes.len()).rev() {
-            let kind = self.nodes[id].kind();
-            if (kind == DepKind::Regular && !self.cfg.regular_deps)
-                || (kind == DepKind::Build && !self.cfg.build_deps)
-                || (kind == DepKind::Dev && !self.cfg.dev_deps)
-                || (kind == DepKind::Optional && !self.cfg.optional_deps)
-                || kind == DepKind::Unknown
-            {
-                self.remove(id);
             }
         }
 

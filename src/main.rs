@@ -34,15 +34,18 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
         .author(crate_authors!())
         .about(crate_description!())
         .args_from_usage(
-            "-I, --include-versions 'Include the dependency version on nodes'
+            "
                  --dot-file [PATH] 'Output file (Default stdout)'
+                 --filter [DEPNAMES] ... 'Only display provided deps'
+             -I, --include-versions 'Include the dependency version on nodes'
 
                  --all-deps 'Include all dependencies in the graph. \
                  Can be used with --no-regular-deps'
                  --no-regular-deps 'Exclude regular dependencies from the graph'
                  --build-deps 'Include build dependencies in the graph (purple)'
                  --dev-deps 'Include dev dependencies in the graph (blue)'
-                 --optional-deps 'Include optional dependencies in the graph (red)'",
+                 --optional-deps 'Include optional dependencies in the graph (red)'
+            ",
         )
         .args(&[
             Arg::from_usage("--manifest-path [PATH] 'Specify location of manifest file'")

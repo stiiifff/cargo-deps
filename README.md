@@ -49,6 +49,10 @@ Regular -> Build -> Dev -> Optional
 
 For example, if a dependency is both a build and a dev dependency, then it will be colored as a build dependency. If, however, you pass the `--dev-deps` option instead of `--all-deps`, the dependency will be colored as a dev dependency (as the build-dependency graph will not be shown).
 
+### Filtering
+
+Some Rust projects have really big dependency trees and maybe you just want to display certain dependencies, like the ones in the same workspace. Fortunately, `cargo-deps` provides the `--filter` option for this use case. Unfortunately, you have to explicitly list all the dependencies you want to keep, and `cargo-deps` doesn't detect workspaces just yet.
+
 ### Example
 
 **Tokei:** [no regular dependencies](tokei.png)

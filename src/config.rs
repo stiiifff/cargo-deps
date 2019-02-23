@@ -4,6 +4,7 @@ use clap::ArgMatches;
 #[derive(Clone, Debug)]
 pub struct Config {
     pub dot_file: Option<String>,
+    pub filter: Option<Vec<String>>,
     pub include_vers: bool,
     pub manifest_path: String,
 
@@ -19,6 +20,9 @@ impl Config {
 
         Ok(Config {
             dot_file: m.value_of("dot-file").map(|s| s.into()),
+            filter: m
+                .values_of("filter")
+                .map(|deps| deps.map(|dep| dep.into()).collect()),
             include_vers: m.is_present("include-versions"),
             manifest_path: m.value_of("manifest-path").unwrap().into(),
 

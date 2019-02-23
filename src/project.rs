@@ -58,7 +58,6 @@ impl Project {
         let manifest_toml = util::toml_from_file(manifest_path)?;
 
         let mut declared_deps = vec![];
-        let mut v = vec![];
 
         // Get the name and version of the root project.
         let (root_name, root_version) = {
@@ -92,18 +91,6 @@ impl Project {
                     } else if self.cfg.regular_deps {
                         declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Regular));
                     }
-                    v.push(name.clone());
-                }
-            }
-        }
-
-        if self.cfg.dev_deps {
-            if let Some(table) = manifest_toml.get("dev-dependencies") {
-                if let Some(table) = table.as_table() {
-                    for (name, _) in table.iter() {
-                        declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Dev));
-                        v.push(name.clone());
-                    }
                 }
             }
         }
@@ -113,7 +100,16 @@ impl Project {
                 if let Some(table) = table.as_table() {
                     for (name, _) in table.iter() {
                         declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Build));
-                        v.push(name.clone());
+                    }
+                }
+            }
+        }
+
+        if self.cfg.dev_deps {
+            if let Some(table) = manifest_toml.get("dev-dependencies") {
+                if let Some(table) = table.as_table() {
+                    for (name, _) in table.iter() {
+                        declared_deps.push(DeclaredDep::with_kind(name.clone(), DepKind::Dev));
                     }
                 }
             }
@@ -174,6 +170,14 @@ fn parse_package(
         )
         .to_owned();
 
+    // If --filter was specified, keep only packages that were indicated.
+    let filter = dg.cfg.filter.clone();
+    if let Some(ref filter_deps) = filter {
+        if name != root_name && !filter_deps.contains(&name) {
+            return;
+        }
+    }
+
     let id = dg.find_or_add(&*name, &*ver);
 
     if let Some(&Value::Array(ref deps)) = pkg.get("dependencies") {
@@ -182,12 +186,20 @@ fn parse_package(
             let dep_name = dep_vec[0].to_owned();
             let dep_ver = dep_vec[1];
 
+            if let Some(ref filter_deps) = filter {
+                if !filter_deps.contains(&dep_name) {
+                    continue;
+                }
+            }
+
             if name == root_name
                 && ver == root_version
                 && !root_deps.iter().any(|dep| dep.name == dep_name)
             {
+                // This dep was filtered out when adding root dependencies.
                 continue;
             }
+
             dg.add_child(id, &*dep_name, dep_ver);
         }
     }
