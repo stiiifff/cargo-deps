@@ -2,9 +2,15 @@
 
 [![](https://img.shields.io/crates/v/cargo-deps.svg)](https://crates.io/crates/cargo-deps) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![LoC](https://tokei.rs/b1/github/m-cat/cargo-deps)](https://github.com/m-cat/cargo-deps)
 
+## About
+
 Cargo subcommand for building dependency graphs of Rust projects.
 
 This project is an improvement on the unmaintained and buggy [cargo-graph](https://github.com/kbknapp/cargo-graph).
+
+Example:
+
+![safe_app dependencies](safe-client-libs.png)
 
 ## Installing
 
