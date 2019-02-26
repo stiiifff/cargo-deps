@@ -307,6 +307,13 @@ impl DepGraph {
 
         writeln!(output, "digraph dependencies {{")?;
         for (i, dep) in self.nodes.iter().enumerate() {
+            if let Some(sub_deps) = &self.cfg.subgraph {
+                if sub_deps.contains(&dep.name) {
+                    // Skip this node, it will be declared in the subgraph.
+                    continue;
+                }
+            }
+
             write!(output, "\tn{}", i)?;
             dep.label(output, &self.cfg, i)?;
         }
@@ -319,6 +326,7 @@ impl DepGraph {
             }
             writeln!(output, "\t\tcolor=brown;")?;
             writeln!(output, "\t\tstyle=dashed;")?;
+            writeln!(output)?;
 
             for (i, dep) in self.nodes.iter().enumerate() {
                 if sub_deps.contains(&dep.name) {

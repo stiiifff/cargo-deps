@@ -17,3 +17,6 @@
 *.bak
 *.bk
 *.orig
+
+# Misc files
+.DS_Store

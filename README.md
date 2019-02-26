@@ -27,17 +27,19 @@ First, make sure you have [graphviz](https://graphviz.gitlab.io/download/) insta
 Next, just `cd` into the Rust project directory you want to graph and run:
 
 ```
-cargo deps | dot -Tpng >| graph.png
+cargo deps | dot -Tpng > graph.png
 ```
 
 That's it! `graph.png` will contain the graph (you can change its name, of course!)
+
+Note that `>` may not work if the output file already exists, in which case you can try `>|`.
 
 ### Dependency Kinds
 
 The default behavior is to exclude optional, dev, and build dependencies. To see all dependencies, pass `--all-deps`:
 
 ```
-cargo deps --all-deps | dot -Tpng >| graph.png
+cargo deps --all-deps | dot -Tpng > graph.png
 ```
 
 Dependencies are colored depending on their kind:
@@ -70,7 +72,7 @@ You can visually group a set of dependencies by using the `--subgraph` command.
 This was generated using the command:
 
 ```
-cargo deps -I --all-deps --no-regular-deps | dot -Tpng >| tokei.png
+cargo deps -I --all-deps --no-regular-deps | dot -Tpng > tokei.png
 ```
 
 **[SAFE Client Libs](https://github.com/maidsafe/safe_client_libs)** -- [graph](safe-client-libs.png)
@@ -78,7 +80,7 @@ cargo deps -I --all-deps --no-regular-deps | dot -Tpng >| tokei.png
 This was generated using the following whopper of a command to display only MaidSafe dependencies:
 
 ```
-cargo deps --all-deps --include-orphans --subgraph safe_app safe_app_jni safe_authenticator safe_authenticator_jni safe_core --subgraph-name "SAFE Client Libs" --filter accumulator config_file_handler crust ffi_utils fake_clock lru_time_cache maidsafe_utilities parsec resource_proof routing rust_sodium safe_app safe_app_jni safe_authenticator safe_authenticator_jni safe_bindgen safe_core safe_crypto safe_vault secure_serialisation self_encryption system_uri tokio_utp --manifest-path safe_app/Cargo.toml | dot -Tpng -Nfontname=Iosevka -Gfontname=Iosevka >| safe-client-libs.png
+cargo deps --all-deps --include-orphans --subgraph safe_app safe_app_jni safe_authenticator safe_authenticator_jni safe_core --subgraph-name "SAFE Client Libs" --filter accumulator config_file_handler crust ffi_utils fake_clock lru_time_cache maidsafe_utilities parsec resource_proof routing rust_sodium safe_app safe_app_jni safe_authenticator safe_authenticator_jni safe_bindgen safe_core safe_crypto safe_vault secure_serialisation self_encryption system_uri tokio_utp --manifest-path safe_app/Cargo.toml | dot -Tpng -Nfontname=Iosevka -Gfontname=Iosevka > safe-client-libs.png
 ```
 
 ### More info
