@@ -15,7 +15,7 @@ pub fn toml_from_file<P: AsRef<Path>>(p: P) -> CliResult<Value> {
     Ok(toml)
 }
 
-pub fn find_manifest_file(file: &PathBuf) -> CliResult<PathBuf> {
+pub fn find_manifest_file(file: &str) -> CliResult<PathBuf> {
     let pwd = env::current_dir()?;
     let manifest = pwd.join(file);
     let file_name = manifest.file_name().unwrap();
@@ -49,7 +49,7 @@ pub fn find_manifest_file(file: &PathBuf) -> CliResult<PathBuf> {
                 return Err(CliError::Generic(format!(
                     "Could not find `{}` in `{}` or any \
                      parent directory",
-                    file.display(),
+                    file,
                     pwd.display()
                 )));
             }

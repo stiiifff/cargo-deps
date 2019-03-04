@@ -26,7 +26,6 @@ use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::fs::File;
 use std::io::{self, BufWriter};
 use std::path::Path;
-use std::path::PathBuf;
 
 fn parse_cli<'a>() -> ArgMatches<'a> {
     App::new("cargo-deps")
@@ -56,8 +55,7 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
                 )
                 .args(&[
                     Arg::from_usage("--manifest-path [PATH] 'Specify location of manifest file'")
-                        .default_value("Cargo.toml")
-                        .validator(is_file),
+                        .default_value("Cargo.toml"),
                     Arg::from_usage("--subgraph-name [NAME] 'Optional name of subgraph'")
                         .requires("subgraph"),
                 ]),
@@ -75,9 +73,40 @@ fn main() {
 }
 
 fn execute(cfg: Config) -> CliResult<()> {
-    // Check the manifest file name.
-    let manifest_path = PathBuf::from(&cfg.manifest_path);
-    if let Some(file_name) = manifest_path.file_name() {
+    // Search through parent dirs for Cargo.toml.
+    is_cargo_toml(&cfg.manifest_path)?;
+    let manifest_path = util::find_manifest_file(&cfg.manifest_path)?;
+
+    // Cargo.lock must be in the same directory as Cargo.toml or in a parent directory.
+    let manifest = manifest_path.to_str().unwrap();
+    let lock_file = format!("{}.lock", &manifest[0..manifest.len() - 5]);
+    let lock_path = util::find_manifest_file(&lock_file)?;
+
+    // Graph the project.
+    let dot_file = cfg.dot_file.clone();
+    let project = Project::with_config(cfg)?;
+    let graph = project.graph(manifest_path, lock_path)?;
+
+    // Render the dot file.
+    match dot_file {
+        None => {
+            let o = io::stdout();
+            let mut bw = BufWriter::new(o.lock());
+            graph.render_to(&mut bw)
+        }
+        Some(file) => {
+            let o = File::create(&Path::new(&file)).expect("Failed to create file");
+            let mut bw = BufWriter::new(o);
+            graph.render_to(&mut bw)
+        }
+    }
+}
+
+// Check that the manifest file name is "Cargo.toml".
+fn is_cargo_toml(file_name: &str) -> CliResult<()> {
+    let path = Path::new(file_name);
+
+    if let Some(file_name) = path.file_name() {
         if file_name != "Cargo.toml" {
             return Err(CliError::Toml(
                 "The manifest-path must be a path to a Cargo.toml file".into(),
@@ -89,38 +118,5 @@ fn execute(cfg: Config) -> CliResult<()> {
         ));
     }
 
-    // Search through parent dirs for Cargo.toml.
-    let manifest_path = util::find_manifest_file(&manifest_path)?;
-
-    // Cargo.lock must be in the same directory as Cargo.toml or in a parent directory.
-    let manifest = manifest_path.to_str().unwrap();
-    let lock_file = format!("{}.lock", &manifest[0..manifest.len() - 5]);
-    let lock_path = util::find_manifest_file(&PathBuf::from(lock_file))?;
-
-    // Graph the project.
-    let dot_file = cfg.dot_file.clone();
-    let project = Project::with_config(cfg)?;
-    let (graph, root_deps_map) = project.graph(manifest_path, lock_path)?;
-
-    // Render the dot file.
-    match dot_file {
-        None => {
-            let o = io::stdout();
-            let mut bw = BufWriter::new(o.lock());
-            graph.render_to(&mut bw, &root_deps_map)
-        }
-        Some(file) => {
-            let o = File::create(&Path::new(&file)).expect("Failed to create file");
-            let mut bw = BufWriter::new(o);
-            graph.render_to(&mut bw, &root_deps_map)
-        }
-    }
-}
-
-fn is_file(s: String) -> Result<(), String> {
-    let p = Path::new(&*s);
-    if p.file_name().is_none() {
-        return Err(format!("'{}' doesn't appear to be a valid file name", &*s));
-    }
     Ok(())
 }

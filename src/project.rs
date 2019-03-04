@@ -19,35 +19,27 @@ impl Project {
         Ok(Project { cfg })
     }
 
-    pub fn graph(
-        self,
-        manifest_path: PathBuf,
-        lock_path: PathBuf,
-    ) -> CliResult<(DepGraph, DeclaredDepsMap)> {
+    pub fn graph(self, manifest_path: PathBuf, lock_path: PathBuf) -> CliResult<DepGraph> {
         let (root_deps, root_name, root_version) = self.parse_root_deps(&manifest_path)?;
 
+        let root_deps_map = create_root_dep_map(&root_deps);
+
         let mut dg = self.parse_lock_file(lock_path, &root_deps, &root_name, &root_version)?;
+        dg.root_deps_map = root_deps_map;
 
         // Set node 0 to be the root.
         if !dg.set_root(&root_name, &root_version) {
             return Err(CliError::Toml("Missing name or version".into()));
         }
 
-        let mut root_deps_map = HashMap::new();
-        for dep in root_deps.iter() {
-            let (name, kind) = (dep.name.clone(), dep.kind);
-            let kinds: &mut Vec<DepKind> = root_deps_map.entry(name).or_insert_with(|| vec![]);
-            kinds.push(kind);
-        }
-
         // Set the kind of dependency on each dep.
-        dg.set_resolved_kind(&root_deps_map);
+        dg.set_resolved_kind();
 
         if !self.cfg.include_vers {
             dg.show_version_on_duplicates();
         }
 
-        Ok((dg, root_deps_map))
+        Ok(dg)
     }
 
     /// Builds a list of the dependencies declared in the manifest file.
@@ -142,6 +134,18 @@ impl Project {
 
         Ok(dg)
     }
+}
+
+fn create_root_dep_map(root_deps: &[DeclaredDep]) -> DeclaredDepsMap {
+    let mut root_deps_map = HashMap::new();
+
+    for dep in root_deps.iter() {
+        let (name, kind) = (dep.name.clone(), dep.kind);
+        let kinds: &mut Vec<DepKind> = root_deps_map.entry(name).or_insert_with(|| vec![]);
+        kinds.push(kind);
+    }
+
+    root_deps_map
 }
 
 fn parse_package(

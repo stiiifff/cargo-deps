@@ -12,12 +12,7 @@ pub type Node = usize;
 pub struct Edge(pub Node, pub Node);
 
 impl Edge {
-    pub fn label<W: Write>(
-        &self,
-        w: &mut W,
-        dg: &DepGraph,
-        root_deps_map: &DeclaredDepsMap,
-    ) -> io::Result<()> {
+    pub fn label<W: Write>(&self, w: &mut W, dg: &DepGraph) -> io::Result<()> {
         use crate::dep::DepKind::{Build, Dev, Optional, Regular, Unknown};
 
         let parent = dg.get(self.0).unwrap().kind();
@@ -27,7 +22,7 @@ impl Edge {
         // Otherwise, the root dep could also be a dep of a regular dep which will cause the root ->
         // root dep edge to appear regular, which is misleading as it is not regular in Cargo.toml.
         let child = if self.0 == 0 {
-            let kinds = root_deps_map.get(&child_dep.name).unwrap();
+            let kinds = &dg.root_deps_map[&child_dep.name];
 
             if kinds.contains(&Regular) {
                 Regular
@@ -65,6 +60,7 @@ impl fmt::Display for Edge {
 pub struct DepGraph {
     pub nodes: Vec<ResolvedDep>,
     pub edges: Vec<Edge>,
+    pub root_deps_map: DeclaredDepsMap,
     pub cfg: Config,
 }
 
@@ -73,12 +69,13 @@ impl DepGraph {
         DepGraph {
             nodes: vec![],
             edges: vec![],
+            root_deps_map: HashMap::new(),
             cfg,
         }
     }
 
     /// Sets the kind of each dependency based on how the dependencies are declared in the manifest.
-    pub fn set_resolved_kind(&mut self, declared_deps_map: &HashMap<String, Vec<DepKind>>) {
+    pub fn set_resolved_kind(&mut self) {
         self.nodes[0].is_regular = true;
 
         // Make sure to process edges from the root node first.
@@ -92,7 +89,7 @@ impl DepGraph {
                 if ed.0 == 0 {
                     // If this is an edge from the root node,
                     // set the kind based on how the dependency is declared in the manifest file.
-                    if let Some(kinds) = declared_deps_map.get(&*self.nodes[ed.1].name) {
+                    if let Some(kinds) = self.root_deps_map.get(&*self.nodes[ed.1].name) {
                         for kind in kinds {
                             match *kind {
                                 DepKind::Regular => self.nodes[ed.1].is_regular = true,
@@ -293,11 +290,7 @@ impl DepGraph {
         self.nodes.len() - 1
     }
 
-    pub fn render_to<W: Write>(
-        mut self,
-        output: &mut W,
-        root_deps_map: &DeclaredDepsMap,
-    ) -> CliResult<()> {
+    pub fn render_to<W: Write>(mut self, output: &mut W) -> CliResult<()> {
         self.edges.sort();
         self.edges.dedup();
         if !self.cfg.include_orphans {
@@ -340,7 +333,7 @@ impl DepGraph {
 
         for ed in &self.edges {
             write!(output, "\t{}", ed)?;
-            ed.label(output, &self, root_deps_map)?;
+            ed.label(output, &self)?;
         }
         writeln!(output, "}}")?;
 
