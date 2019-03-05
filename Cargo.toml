@@ -7,6 +7,7 @@ authors = [
 categories = ["development-tools", "development-tools::cargo-plugins"]
 description = "Cargo subcommand for building dependency graphs of Rust projects."
 exclude = ["*.png"]
+homepage = "https://github.com/m-cat/cargo-deps"
 keywords = ["cargo", "dependencies", "graph", "visualization", "graphviz"]
 license = "MIT"
 name = "cargo-deps"
