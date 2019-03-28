@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::graph::{DepGraph, Node};
 use std::io::{Result, Write};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -10,19 +10,13 @@ pub enum DepKind {
     Unknown,
 }
 
-#[derive(Debug)]
-pub struct DeclaredDep {
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct RootCrate {
     pub name: String,
-    pub kind: DepKind,
+    pub ver: String,
 }
 
-impl DeclaredDep {
-    pub fn with_kind(name: String, kind: DepKind) -> Self {
-        DeclaredDep { name, kind }
-    }
-}
-
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ResolvedDep {
     pub name: String,
     pub ver: String,
@@ -32,6 +26,9 @@ pub struct ResolvedDep {
     pub is_build: bool,
     pub is_dev: bool,
     pub is_optional: bool,
+
+    pub children: Vec<Node>,
+    pub parents: Vec<Node>,
 }
 
 impl ResolvedDep {
@@ -45,6 +42,9 @@ impl ResolvedDep {
             is_build: false,
             is_dev: false,
             is_optional: false,
+
+            children: vec![],
+            parents: vec![],
         }
     }
 
@@ -62,14 +62,18 @@ impl ResolvedDep {
         }
     }
 
-    pub fn label<W: Write>(&self, w: &mut W, cfg: &Config, i: usize) -> Result<()> {
-        let name = if self.force_write_ver || cfg.include_vers {
+    pub fn label<W: Write>(&self, w: &mut W, dg: &DepGraph) -> Result<()> {
+        let name = if self.force_write_ver || dg.cfg.include_vers {
             format!("{} v{}", self.name, self.ver)
         } else {
             self.name.clone()
         };
 
-        let shape = if i == 0 { ", shape=box" } else { "" };
+        let shape = if dg.root_deps_map.contains_key(&self.name) {
+            ", shape=box"
+        } else {
+            ""
+        };
 
         match self.kind() {
             DepKind::Regular => writeln!(w, " [label=\"{}\"{}];", name, shape),

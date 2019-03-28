@@ -1,9 +1,9 @@
 # cargo-deps
 
 [![Build Status](https://travis-ci.com/m-cat/cargo-deps.svg?branch=master)](https://travis-ci.com/m-cat/cargo-deps)
-[![](https://img.shields.io/crates/v/cargo-deps.svg)](https://crates.io/crates/cargo-deps)
-[![](https://img.shields.io/crates/d/cargo-deps.svg)](https://crates.io/crates/cargo-deps)
-[![](https://img.shields.io/github/issues-raw/m-cat/cargo-deps.svg)](https://github.com/m-cat/cargo-deps/issues)
+[![crates.io](https://img.shields.io/crates/v/cargo-deps.svg)](https://crates.io/crates/cargo-deps)
+[![Downloads](https://img.shields.io/crates/d/cargo-deps.svg)](https://crates.io/crates/cargo-deps)
+[![Issues](https://img.shields.io/github/issues-raw/m-cat/cargo-deps.svg)](https://github.com/m-cat/cargo-deps/issues)
 [![LoC](https://tokei.rs/b1/github/m-cat/cargo-deps)](https://github.com/m-cat/cargo-deps)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
