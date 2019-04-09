@@ -131,7 +131,7 @@ impl DepGraph {
                     if self.cfg.direct_deps {
                         for c in self.nodes[*n].children.iter().filter(|c| *c != child) {
                             if self.transitive_dep(*c, *child) {
-                                continue 'child_loop
+                                continue 'child_loop;
                             }
                         }
                     }
@@ -370,10 +370,9 @@ impl DepGraph {
         eprintln!("transitive dep: ({}, {})", parent, child);
         for c in self.nodes[parent].children.iter() {
             if *c == child || self.transitive_dep(*c, child) {
-                return true
+                return true;
             }
         }
         false
     }
-
 }
