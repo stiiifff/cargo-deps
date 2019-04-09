@@ -127,7 +127,14 @@ impl DepGraph {
         if self.edges.is_empty() {
             // Add back the edges, this time in topological order.
             for n in l.iter() {
-                for child in self.nodes[*n].children.iter() {
+                'child_loop: for child in self.nodes[*n].children.iter() {
+                    if self.cfg.direct_deps {
+                        for c in self.nodes[*n].children.iter().filter(|c| *c != child) {
+                            if self.transitive_dep(*c, *child) {
+                                continue 'child_loop
+                            }
+                        }
+                    }
                     self.edges.push(Edge(*n, *child));
                 }
             }
@@ -358,4 +365,15 @@ impl DepGraph {
 
         Ok(())
     }
+
+    fn transitive_dep(&self, parent: usize, child: usize) -> bool {
+        eprintln!("transitive dep: ({}, {})", parent, child);
+        for c in self.nodes[parent].children.iter() {
+            if *c == child || self.transitive_dep(*c, child) {
+                return true
+            }
+        }
+        false
+    }
+
 }
