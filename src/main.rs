@@ -51,7 +51,7 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
                         --build-deps 'Include build dependencies in the graph (purple)'
                         --dev-deps 'Include dev dependencies in the graph (blue)'
                         --optional-deps 'Include optional dependencies in the graph (red)'
-                        --direct-deps 'Filter out edges that point to a transitive dependency'
+                        --no-transitive-deps 'Filter out edges that point to a transitive dependency'
                     ",
                 )
                 .args(&[

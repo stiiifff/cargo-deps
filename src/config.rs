@@ -15,7 +15,7 @@ pub struct Config {
     pub build_deps: bool,
     pub dev_deps: bool,
     pub optional_deps: bool,
-    pub direct_deps: bool,
+    pub transitive_deps: bool,
 }
 
 impl Config {
@@ -39,7 +39,7 @@ impl Config {
             build_deps: all_deps || m.is_present("build-deps"),
             dev_deps: all_deps || m.is_present("dev-deps"),
             optional_deps: all_deps || m.is_present("optional-deps"),
-            direct_deps: m.is_present("direct-deps"),
+            transitive_deps: !m.is_present("no-transitive-deps"),
         })
     }
 }
