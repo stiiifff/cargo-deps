@@ -127,7 +127,17 @@ impl DepGraph {
         if self.edges.is_empty() {
             // Add back the edges, this time in topological order.
             for n in l.iter() {
-                for child in self.nodes[*n].children.iter() {
+                'child_loop: for child in self.nodes[*n].children.iter() {
+                    // push an edge for each child, unless filtering of
+                    // transitive deps is enabled, in which case skip to the
+                    // next child if a transitive dependency exists
+                    if !self.cfg.transitive_deps {
+                        for c in self.nodes[*n].children.iter().filter(|c| *c != child) {
+                            if self.transitive_dep(*c, *child) {
+                                continue 'child_loop;
+                            }
+                        }
+                    }
                     self.edges.push(Edge(*n, *child));
                 }
             }
@@ -357,5 +367,19 @@ impl DepGraph {
         writeln!(output, "}}")?;
 
         Ok(())
+    }
+
+    // TODO: make this function more efficient with memoization:
+    // ahead of time, generate a list of all dependencies (direct and indirect)
+    // for all nodes, and then this function can simply check if child is in
+    // parent's list of dependencies (or possibly remove this function
+    // entirely)
+    fn transitive_dep(&self, parent: usize, child: usize) -> bool {
+        for c in self.nodes[parent].children.iter() {
+            if *c == child || self.transitive_dep(*c, child) {
+                return true;
+            }
+        }
+        false
     }
 }
