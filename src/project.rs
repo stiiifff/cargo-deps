@@ -25,12 +25,10 @@ impl Project {
     pub fn graph(self, manifest_path: PathBuf, lock_path: PathBuf) -> CliResult<DepGraph> {
         let (root_crates, root_deps_map) = self.parse_root_deps(&manifest_path)?;
 
-        let mut dg = self.parse_lock_file(lock_path, &dbg!(root_crates), dbg!(root_deps_map))?;
+        let mut dg = self.parse_lock_file(lock_path, &root_crates, root_deps_map)?;
 
         // Sort the graph.
         dg.topological_sort()?;
-
-        dbg!(&dg);
 
         // Set the kind of dependency on each dep.
         dg.set_resolved_kind()?;
@@ -39,7 +37,7 @@ impl Project {
             dg.show_version_on_duplicates();
         }
 
-        Ok(dbg!(dg))
+        Ok(dg)
     }
 
     /// Builds a list of the dependencies declared in the manifest file.
