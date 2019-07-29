@@ -80,7 +80,11 @@ impl Project {
 
             if let Some(table) = manifest_toml.get("dependencies") {
                 if let Some(table) = table.as_table() {
-                    for (dep_name, dep_table) in table.iter() {
+                    for (mut dep_name, dep_table) in table.iter() {
+                        if let Some(&Value::String(ref name)) = dep_table.get("package") {
+                            dep_name = name;
+                        }
+
                         if let Some(&Value::Boolean(true)) = dep_table.get("optional") {
                             if self.cfg.optional_deps {
                                 add_kind(
@@ -99,7 +103,11 @@ impl Project {
             if self.cfg.build_deps {
                 if let Some(table) = manifest_toml.get("build-dependencies") {
                     if let Some(table) = table.as_table() {
-                        for (dep_name, _) in table.iter() {
+                        for (mut dep_name, dep_table) in table.iter() {
+                            if let Some(&Value::String(ref name)) = dep_table.get("package") {
+                                dep_name = name;
+                            }
+
                             add_kind(&mut dep_kinds_map, dep_name.to_string(), DepKind::Build);
                         }
                     }
@@ -109,7 +117,11 @@ impl Project {
             if self.cfg.dev_deps {
                 if let Some(table) = manifest_toml.get("dev-dependencies") {
                     if let Some(table) = table.as_table() {
-                        for (dep_name, _) in table.iter() {
+                        for (mut dep_name, dep_table) in table.iter() {
+                            if let Some(&Value::String(ref name)) = dep_table.get("package") {
+                                dep_name = name;
+                            }
+
                             add_kind(&mut dep_kinds_map, dep_name.to_string(), DepKind::Dev);
                         }
                     }
@@ -140,14 +152,20 @@ impl Project {
         let mut dg = DepGraph::new(self.cfg.clone());
         dg.root_deps_map = root_deps_map;
 
-        if let Some(root) = lock_toml.get("root") {
-            parse_package(&mut dg, root, root_crates)?;
-        }
-
         if let Some(&Value::Array(ref packages)) = lock_toml.get("package") {
             for pkg in packages {
                 parse_package(&mut dg, pkg, root_crates)?;
             }
+        } else if let Some(root) = lock_toml.get("root") {
+            println!(
+                "Warning: deprecated [root] table found in lock file. Using [root] as [package]."
+            );
+
+            parse_package(&mut dg, root, root_crates)?;
+        } else {
+            return Err(CliError::Toml(
+                "Missing [package] table in lock file".into(),
+            ));
         }
 
         // Check that all root crates were found in the lock files.
@@ -172,21 +190,15 @@ fn add_kind(dep_kinds_map: &mut DepKindsMap, key: String, kind: DepKind) {
 fn parse_package(dg: &mut DepGraph, pkg: &Value, root_crates: &[RootCrate]) -> CliResult<()> {
     let name = pkg
         .get("name")
-        .expect("No 'name' field in Cargo.lock [package] or [root] table")
+        .expect("No 'name' field in Cargo.lock [package] table")
         .as_str()
-        .expect(
-            "'name' field of [package] or [root] table in Cargo.lock was not a \
-             valid string",
-        )
+        .expect("'name' field of [package] table in Cargo.lock was not a valid string")
         .to_owned();
     let ver = pkg
         .get("version")
-        .expect("No 'version' field in Cargo.lock [package] or [root] table")
+        .expect("No 'version' field in Cargo.lock [package] table")
         .as_str()
-        .expect(
-            "'version' field of [package] or [root] table in Cargo.lock was not a \
-             valid string",
-        )
+        .expect("'version' field of [package] table in Cargo.lock was not a valid string")
         .to_owned();
 
     // If --filter was specified, keep only packages that were indicated.
@@ -208,8 +220,8 @@ fn parse_package(dg: &mut DepGraph, pkg: &Value, root_crates: &[RootCrate]) -> C
             .any(|root_crate| root_crate.name == name && root_crate.ver == ver)
         {
             return Err(CliError::Generic(format!(
-                "Version {} of root crate '{}' in Cargo.lock does not \
-                 match version specified in Cargo.toml",
+                "Version {} of root crate '{}' in Cargo.lock does not match version specified in \
+                 Cargo.toml",
                 ver, name
             )));
         }
