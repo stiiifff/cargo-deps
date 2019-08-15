@@ -19,14 +19,20 @@ mod graph;
 mod project;
 mod util;
 
-use crate::config::Config;
-use crate::error::{CliError, CliResult};
-use crate::project::Project;
+use crate::{
+    config::Config,
+    error::{CliError, CliResult},
+    project::Project,
+};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
-use std::fs::File;
-use std::io::{self, BufWriter};
-use std::path::Path;
+use std::{
+    fs::File,
+    io::{self, BufWriter},
+    path::Path,
+};
 
+// Todo: remove this and uncomment the next occurrence.
+#[rustfmt::skip]
 fn parse_cli<'a>() -> ArgMatches<'a> {
     App::new("cargo-deps")
         .version(crate_version!())
@@ -37,21 +43,23 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
                 .author(crate_authors!())
                 .about(crate_description!())
                 .args_from_usage(
+                    // #[rustfmt::skip]
                     "
                     -o  --dot-file [PATH] 'Output file [default: stdout]'
                         --filter [DEPNAMES] ... 'Only display provided deps'
                         --include-orphans 'Don't purge orphan nodes (yellow). \
-                        This is useful in some workspaces'
+                          This is useful in some workspaces'
                     -I, --include-versions 'Include the dependency version on nodes'
                         --subgraph [DEPNAMES] ... 'Group provided deps in their own subgraph'
 
                         --all-deps 'Include all dependencies in the graph. \
-                        Can be used with --no-regular-deps'
+                          Can be used with --no-regular-deps'
                         --no-regular-deps 'Exclude regular dependencies from the graph'
                         --build-deps 'Include build dependencies in the graph (purple)'
                         --dev-deps 'Include dev dependencies in the graph (blue)'
                         --optional-deps 'Include optional dependencies in the graph (red)'
-                        --no-transitive-deps 'Filter out edges that point to a transitive dependency'
+                        --no-transitive-deps 'Filter out edges that point to a transitive \
+                          dependency'
                     ",
                 )
                 .args(&[

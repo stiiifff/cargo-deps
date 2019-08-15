@@ -1,10 +1,10 @@
-use crate::config::Config;
-use crate::dep::{DepKind, ResolvedDep};
-use crate::error::{CliError, CliResult};
-use crate::project::RootDepsMap;
-use std::collections::HashMap;
-use std::fmt;
-use std::io::Write;
+use crate::{
+    config::Config,
+    dep::{DepKind, ResolvedDep},
+    error::{CliError, CliResult},
+    project::RootDepsMap,
+};
+use std::{collections::HashMap, fmt, io::Write};
 
 pub type Node = usize;
 
@@ -36,8 +36,8 @@ impl Edge {
                 }
             } else {
                 return Err(CliError::Generic(format!(
-                    "Crate '{}' is not a dependency of a root crate. \
-                     This is probably a logic error.",
+                    "Crate '{}' is not a dependency of a root crate. This is probably a logic \
+                     error.",
                     child.name
                 )));
             }
@@ -188,8 +188,8 @@ impl DepGraph {
                     }
                 } else {
                     return Err(CliError::Generic(format!(
-                        "Crate '{}' is not a dependency of a root crate. \
-                         This is probably a logic error.",
+                        "Crate '{}' is not a dependency of a root crate. This is probably a logic \
+                         error.",
                         child.name
                     )));
                 }

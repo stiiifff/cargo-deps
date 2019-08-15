@@ -1,10 +1,11 @@
-use crate::config::Config;
-use crate::dep::{DepKind, RootCrate};
-use crate::error::{CliError, CliResult};
-use crate::graph::DepGraph;
-use crate::util;
-use std::collections::HashMap;
-use std::path::PathBuf;
+use crate::{
+    config::Config,
+    dep::{DepKind, RootCrate},
+    error::{CliError, CliResult},
+    graph::DepGraph,
+    util,
+};
+use std::{collections::HashMap, path::PathBuf};
 use toml::Value;
 
 // Map of dep names to their kinds.

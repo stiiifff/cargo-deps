@@ -1,6 +1,7 @@
-use std::fmt::Result as FmtResult;
-use std::fmt::{Display, Formatter};
-use std::io;
+use std::{
+    fmt::{Display, Formatter, Result as FmtResult},
+    io,
+};
 
 pub type CliResult<T> = Result<T, CliError>;
 
