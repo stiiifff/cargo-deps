@@ -5,6 +5,7 @@
 [![Downloads](https://img.shields.io/crates/d/cargo-deps.svg)](https://crates.io/crates/cargo-deps)
 [![Issues](https://img.shields.io/github/issues-raw/m-cat/cargo-deps.svg)](https://github.com/m-cat/cargo-deps/issues)
 [![LoC](https://tokei.rs/b1/github/m-cat/cargo-deps)](https://github.com/m-cat/cargo-deps)
+[![Coverage Status](https://coveralls.io/repos/github/m-cat/over/badge.svg?branch=master)](https://coveralls.io/github/m-cat/over?branch=master)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## About
