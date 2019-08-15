@@ -20,7 +20,7 @@ pub struct Project {
 
 impl Project {
     pub fn with_config(cfg: Config) -> CliResult<Self> {
-        Ok(Project { cfg })
+        Ok(Self { cfg })
     }
 
     pub fn graph(self, manifest_path: PathBuf, lock_path: PathBuf) -> CliResult<DepGraph> {

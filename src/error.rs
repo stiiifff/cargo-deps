@@ -15,9 +15,9 @@ pub enum CliError {
 impl Display for CliError {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         match *self {
-            CliError::Generic(ref e) => write!(f, "{}", e),
-            CliError::Toml(ref e) => write!(f, "Could not parse toml file: {}", e),
-            CliError::Io(ref e) => write!(f, "{}", e),
+            Self::Generic(ref e) => write!(f, "{}", e),
+            Self::Toml(ref e) => write!(f, "Could not parse toml file: {}", e),
+            Self::Io(ref e) => write!(f, "{}", e),
         }
     }
 }
@@ -32,12 +32,12 @@ impl CliError {
 
 impl From<io::Error> for CliError {
     fn from(ioe: io::Error) -> Self {
-        CliError::Io(ioe)
+        Self::Io(ioe)
     }
 }
 
 impl From<toml::de::Error> for CliError {
     fn from(err: toml::de::Error) -> Self {
-        CliError::Generic(format!("Could not parse input as TOML: {}", err))
+        Self::Generic(format!("Could not parse input as TOML: {}", err))
     }
 }

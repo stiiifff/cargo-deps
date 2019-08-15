@@ -31,7 +31,7 @@ use std::{
     path::Path,
 };
 
-// Todo: remove this and uncomment the next occurrence.
+// TODO: remove this and uncomment the next occurrence.
 #[rustfmt::skip]
 fn parse_cli<'a>() -> ArgMatches<'a> {
     App::new("cargo-deps")

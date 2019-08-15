@@ -59,7 +59,7 @@ impl Edge {
 
 impl fmt::Display for Edge {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let &Edge(il, ir) = self;
+        let &Self(il, ir) = self;
         write!(f, "n{} -> n{}", il, ir)
     }
 }
@@ -76,7 +76,7 @@ pub struct DepGraph {
 
 impl DepGraph {
     pub fn new(cfg: Config) -> Self {
-        DepGraph {
+        Self {
             nodes: vec![],
             edges: vec![],
             root_deps_map: HashMap::new(),

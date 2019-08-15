@@ -22,7 +22,7 @@ impl Config {
     pub fn from_matches(m: &ArgMatches) -> CliResult<Self> {
         let all_deps = m.is_present("all-deps");
 
-        Ok(Config {
+        Ok(Self {
             dot_file: m.value_of("dot-file").map(|s| s.into()),
             filter: m
                 .values_of("filter")

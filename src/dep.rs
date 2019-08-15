@@ -33,7 +33,7 @@ pub struct ResolvedDep {
 
 impl ResolvedDep {
     pub fn new(name: String, ver: String) -> Self {
-        ResolvedDep {
+        Self {
             name,
             ver,
             force_write_ver: false,
