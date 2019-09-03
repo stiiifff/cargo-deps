@@ -86,9 +86,14 @@ impl DepGraph {
 
     /// Performs a topological sort on the edges.
     pub fn topological_sort(&mut self) -> CliResult<()> {
+        // Create a clone of the nodes list so we can remove parents and children without affecting
+        // the original list. We work on the original list of edges, clearing it as we go, because
+        // we construct a new one at the end, in topological order.
         let mut graph_nodes = self.nodes.clone();
-        let mut l: Vec<Node> = vec![]; // Will contain indices of the nodes in sorted order.
-        let mut s: Vec<Node> = vec![]; // Set of nodes with no incoming edges.
+        // Will contain indices of the nodes in sorted order.
+        let mut l: Vec<Node> = vec![];
+        // Set of nodes with no incoming edges.
+        let mut s: Vec<Node> = vec![];
 
         // Populate initial list of start nodes which have no incoming edges.
         for (i, node) in self.nodes.iter().enumerate() {
@@ -104,18 +109,18 @@ impl DepGraph {
                 assert_ne!(n, child);
 
                 // Remove the edge from n -> child.
-                let e_index = self
+                let edge_index = self
                     .edges
                     .iter()
                     .position(|Edge(a, b)| a == &n && b == &child)
                     .unwrap();
-                self.edges.remove(e_index);
-                let n_index = graph_nodes[child]
+                self.edges.remove(edge_index);
+                let node_index = graph_nodes[child]
                     .parents
                     .iter()
                     .position(|node| *node == n)
                     .unwrap();
-                graph_nodes[child].parents.remove(n_index);
+                graph_nodes[child].parents.remove(node_index);
 
                 // If child has no other parents, it is in the next topological level.
                 if graph_nodes[child].parents.is_empty() {
@@ -128,9 +133,9 @@ impl DepGraph {
             // Add back the edges, this time in topological order.
             for n in l.iter() {
                 'child_loop: for child in self.nodes[*n].children.iter() {
-                    // push an edge for each child, unless filtering of
-                    // transitive deps is enabled, in which case skip to the
-                    // next child if a transitive dependency exists
+                    // Push an edge for each child, unless filtering of transitive deps is enabled,
+                    // in which case skip to the next child if a transitive dependency exists to the
+                    // child through one of the other children nodes.
                     if !self.cfg.transitive_deps {
                         for c in self.nodes[*n].children.iter().filter(|c| *c != child) {
                             if self.transitive_dep(*c, *child) {
@@ -161,10 +166,25 @@ impl DepGraph {
 
         // Iterate over edges in topologically-sorted order to propogate the kinds.
         for ed in self.edges.iter() {
-            let (parent_name, parent_regular, parent_build, parent_dev, parent_optional) = {
-                let parent = &self.nodes[ed.0];
+            // Get the parent attributes and drop `parent` to avoid having two mutable references.
+            let (
+                parent_name,
+                parent_depth,
+                parent_regular,
+                parent_build,
+                parent_dev,
+                parent_optional,
+            ) = {
+                let parent = &mut self.nodes[ed.0];
+
+                // If the parent depth isn't set yet, set it to 0.
+                if parent.depth.is_none() {
+                    parent.depth = Some(0);
+                }
+
                 (
                     parent.name.to_string(),
+                    parent.depth,
                     parent.is_regular,
                     parent.is_build,
                     parent.is_dev,
@@ -172,6 +192,11 @@ impl DepGraph {
                 )
             };
             let mut child = &mut self.nodes[ed.1];
+
+            // If the child depth isn't set yet, set it based on the parent depth.
+            if child.depth.is_none() {
+                child.depth = Some(parent_depth.unwrap() + 1);
+            }
 
             if let Some(dep_kinds_map) = self.root_deps_map.get(&parent_name) {
                 // If this is an edge from the root node,
@@ -302,7 +327,7 @@ impl DepGraph {
     }
 
     pub fn render_to<W: Write>(self, output: &mut W) -> CliResult<()> {
-        // Keep track of added nodes.
+        // Keep track of all added nodes.
         let mut nodes_added = vec![];
 
         writeln!(output, "digraph dependencies {{")?;
@@ -316,6 +341,14 @@ impl DepGraph {
                 }
             }
 
+            // Skip nodes below the maximum depth, if specified.
+            // These nodes will still be output later if specified in a subgraph.
+            if let Some(depth) = self.cfg.depth {
+                if dep.depth.unwrap() > depth {
+                    continue;
+                }
+            }
+
             // Skip orphan nodes.
             // Orphan nodes will still be output later if specified in a subgraph.
             if !self.cfg.include_orphans {
@@ -324,9 +357,9 @@ impl DepGraph {
                 }
             }
 
+            // Add the node.
             write!(output, "\tn{}", i)?;
             dep.label(output, &self)?;
-
             nodes_added.push(i);
         }
         writeln!(output)?;

@@ -1,8 +1,10 @@
 use crate::error::CliResult;
 use clap::ArgMatches;
+use std::str::FromStr;
 
 #[derive(Clone, Debug)]
 pub struct Config {
+    pub depth: Option<usize>,
     pub dot_file: Option<String>,
     pub filter: Option<Vec<String>>,
     pub include_orphans: bool,
@@ -23,6 +25,9 @@ impl Config {
         let all_deps = m.is_present("all-deps");
 
         Ok(Self {
+            depth: m
+                .value_of("depth")
+                .map(|depth| usize::from_str(depth).unwrap()),
             dot_file: m.value_of("dot-file").map(|s| s.into()),
             filter: m
                 .values_of("filter")

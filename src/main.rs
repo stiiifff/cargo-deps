@@ -29,6 +29,7 @@ use std::{
     fs::File,
     io::{self, BufWriter},
     path::Path,
+    str::FromStr,
 };
 
 // TODO: remove this and uncomment the next occurrence.
@@ -45,24 +46,30 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
                 .args_from_usage(
                     // #[rustfmt::skip]
                     "
-                    -o  --dot-file [PATH] 'Output file [default: stdout]'
-                        --filter [DEPNAMES] ... 'Only display provided deps'
-                        --include-orphans 'Don't purge orphan nodes (yellow). \
-                          This is useful in some workspaces'
-                    -I, --include-versions 'Include the dependency version on nodes'
-                        --subgraph [DEPNAMES] ... 'Group provided deps in their own subgraph'
+                    -o --dot-file [PATH] 'Output file [default: stdout]'
+                       --filter [DEPNAMES] ... 'Only display provided deps'
+                       --include-orphans 'Don't purge orphan nodes (yellow). \
+                                          This is useful in some workspaces'
+                    -I --include-versions 'Include the dependency version on nodes'
+                       --subgraph [DEPNAMES] ... 'Group provided deps in their own subgraph'
 
-                        --all-deps 'Include all dependencies in the graph. \
-                          Can be used with --no-regular-deps'
-                        --no-regular-deps 'Exclude regular dependencies from the graph'
-                        --build-deps 'Include build dependencies in the graph (purple)'
-                        --dev-deps 'Include dev dependencies in the graph (blue)'
-                        --optional-deps 'Include optional dependencies in the graph (red)'
-                        --no-transitive-deps 'Filter out edges that point to a transitive \
-                          dependency'
+                      --all-deps 'Include all dependencies in the graph. \
+                                  Can be used with --no-regular-deps'
+                       --no-regular-deps 'Exclude regular dependencies from the graph'
+                       --build-deps 'Include build dependencies in the graph (purple)'
+                       --dev-deps 'Include dev dependencies in the graph (blue)'
+                       --optional-deps 'Include optional dependencies in the graph (red)'
+                       --no-transitive-deps 'Filter out edges that point to a transitive \
+                                             dependency'
                     ",
                 )
                 .args(&[
+                    Arg::from_usage("-d --depth [DEPTH] 'The maximum dependency depth to display. \
+                                                         The default is no limit'")
+                        .validator(|v| usize::from_str(&v)
+                                   .map(|_| ())
+                                   .map_err(|e| format!("{}: {}", v, e))
+                        ),
                     Arg::from_usage("--manifest-path [PATH] 'Specify location of manifest file'")
                         .default_value("Cargo.toml"),
                     Arg::from_usage("--subgraph-name [NAME] 'Optional name of subgraph'")

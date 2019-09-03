@@ -38,6 +38,6 @@ impl From<io::Error> for CliError {
 
 impl From<toml::de::Error> for CliError {
     fn from(err: toml::de::Error) -> Self {
-        Self::Generic(format!("Could not parse input as TOML: {}", err))
+        Self::Toml(format!("Could not parse input as TOML: {}", err))
     }
 }

@@ -21,6 +21,7 @@ pub struct ResolvedDep {
     pub name: String,
     pub ver: String,
     pub force_write_ver: bool,
+    pub depth: Option<usize>,
 
     pub is_regular: bool,
     pub is_build: bool,
@@ -37,6 +38,7 @@ impl ResolvedDep {
             name,
             ver,
             force_write_ver: false,
+            depth: None,
 
             is_regular: false,
             is_build: false,
