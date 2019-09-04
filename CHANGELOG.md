@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.1]
+
+- Update help output.
+
 ## [1.1.0]
 
 - Add --depth option to limit the size of graphs.
