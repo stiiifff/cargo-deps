@@ -32,6 +32,11 @@ use std::{
     str::FromStr,
 };
 
+const USAGE: &str = "\
+cargo-deps writes a graph in dot format to standard output.
+
+    Typical usage is `cargo deps | dot -Tpng > graph.png`.";
+
 // TODO: remove this and uncomment the next occurrence.
 #[rustfmt::skip]
 fn parse_cli<'a>() -> ArgMatches<'a> {
@@ -43,6 +48,8 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
             SubCommand::with_name("deps")
                 .author(crate_authors!())
                 .about(crate_description!())
+                .usage(USAGE)
+                .setting(AppSettings::UnifiedHelpMessage)
                 .args_from_usage(
                     // #[rustfmt::skip]
                     "
