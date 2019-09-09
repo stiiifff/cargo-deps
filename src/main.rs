@@ -1,12 +1,4 @@
-#![deny(
-    missing_debug_implementations,
-    missing_copy_implementations,
-    trivial_casts,
-    trivial_numeric_casts,
-    unsafe_code,
-    unused_import_braces,
-    unused_qualifications
-)]
+#![forbid(unsafe_code)]
 
 #[macro_use]
 extern crate clap;
@@ -50,7 +42,6 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
                 .author(crate_authors!())
                 .about(crate_description!())
                 .usage(USAGE)
-                .setting(AppSettings::UnifiedHelpMessage)
                 .args_from_usage(
                     // #[rustfmt::skip]
                     "
