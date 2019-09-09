@@ -44,6 +44,7 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
         .version(crate_version!())
         .bin_name("cargo")
         .settings(&[AppSettings::GlobalVersion, AppSettings::SubcommandRequired])
+        .global_setting(AppSettings::ColoredHelp)
         .subcommand(
             SubCommand::with_name("deps")
                 .author(crate_authors!())
@@ -53,7 +54,7 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
                 .args_from_usage(
                     // #[rustfmt::skip]
                     "
-                    -o --dot-file [PATH] 'Output file [default: stdout]'
+                    -o --dot-file [PATH] 'Output file, or stdout if not specified'
                        --filter [DEPNAMES] ... 'Only display provided deps'
                        --include-orphans 'Don't purge orphan nodes (yellow). \
                                           This is useful in some workspaces'
