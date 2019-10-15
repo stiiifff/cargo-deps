@@ -1,20 +1,20 @@
 mod dep;
-mod error;
 mod graph;
 mod project;
 mod util;
 
 pub mod config;
+pub mod error;
 
+use std::{
+    fs::File,
+    io::{self, BufWriter},
+    path::Path,
+};
 use {
     config::Config,
     error::{CliError, CliResult},
     project::Project,
-};
-use std::{
-    fs::File,
-    io::{self, BufWriter},
-    path::Path
 };
 
 pub fn execute(cfg: Config) -> CliResult<()> {
