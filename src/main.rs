@@ -3,9 +3,14 @@
 #[macro_use]
 extern crate clap;
 
-use std::str::FromStr;
+use std::{
+    fs::File,
+    io::{self, Write},
+    path::Path,
+    str::FromStr,
+};
 
-use cargo_deps::{config::Config, execute};
+use cargo_deps::{get_dep_graph, render_dep_graph, Config};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
 const USAGE: &str = "\
@@ -67,6 +72,20 @@ fn main() {
 
     if let Some(m) = m.subcommand_matches("deps") {
         let cfg = Config::from_matches(&m).unwrap_or_else(|e| e.exit());
-        execute(cfg).map_err(|e| e.exit()).unwrap();
+        let dot_file = cfg.dot_file.clone();
+
+        // Get dependency graph & render it
+        let o = get_dep_graph(cfg)
+            .and_then(|g| render_dep_graph(g))
+            .map_err(|e| e.exit())
+            .unwrap();
+
+        // Output to stoud or render the dot file
+        match dot_file {
+            None => Box::new(io::stdout()) as Box<dyn Write>,
+            Some(file) => Box::new(File::create(&Path::new(&file)).expect("Failed to create file")),
+        }
+        .write_all(&o.into_bytes())
+        .expect("Unable to write graph");
     }
 }

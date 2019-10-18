@@ -1,22 +1,19 @@
+mod config;
 mod dep;
+mod error;
 mod graph;
 mod project;
 mod util;
 
-pub mod config;
-pub mod error;
+pub use config::Config;
+pub use error::{CliError, CliResult};
 
-use std::{
-    fs::File,
-    io::{self, BufWriter},
-    path::Path,
-};
+use std::{io::BufWriter, path::Path};
 
-use config::Config;
-use error::{CliError, CliResult};
+use graph::DepGraph;
 use project::Project;
 
-pub fn execute(cfg: Config) -> CliResult<()> {
+pub fn get_dep_graph(cfg: Config) -> CliResult<DepGraph> {
     // Search through parent dirs for Cargo.toml.
     is_cargo_toml(&cfg.manifest_path)?;
     let manifest_path = util::find_manifest_file(&cfg.manifest_path)?;
@@ -27,23 +24,17 @@ pub fn execute(cfg: Config) -> CliResult<()> {
     let lock_path = util::find_manifest_file(&lock_file)?;
 
     // Graph the project.
-    let dot_file = cfg.dot_file.clone();
     let project = Project::with_config(cfg)?;
-    let graph = project.graph(manifest_path, lock_path)?;
+    project.graph(manifest_path, lock_path)
+}
 
-    // Render the dot file.
-    match dot_file {
-        None => {
-            let o = io::stdout();
-            let mut bw = BufWriter::new(o.lock());
-            graph.render_to(&mut bw)
-        }
-        Some(file) => {
-            let o = File::create(&Path::new(&file)).expect("Failed to create file");
-            let mut bw = BufWriter::new(o);
-            graph.render_to(&mut bw)
-        }
-    }
+pub fn render_dep_graph(graph: DepGraph) -> CliResult<String> {
+    let mut v: Vec<u8> = Vec::new();
+    let mut bw = BufWriter::new(&mut v);
+    graph.render_to(&mut bw)?;
+    drop(bw);
+
+    String::from_utf8(v).map_err(|err| CliError::Generic(err.to_string()))
 }
 
 // Check that the manifest file name is "Cargo.toml".
