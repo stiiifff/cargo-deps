@@ -11,11 +11,10 @@ use std::{
     io::{self, BufWriter},
     path::Path,
 };
-use {
-    config::Config,
-    error::{CliError, CliResult},
-    project::Project,
-};
+
+use config::Config;
+use error::{CliError, CliResult};
+use project::Project;
 
 pub fn execute(cfg: Config) -> CliResult<()> {
     // Search through parent dirs for Cargo.toml.

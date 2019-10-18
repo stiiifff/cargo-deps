@@ -3,10 +3,10 @@
 #[macro_use]
 extern crate clap;
 
-use cargo_deps::config::Config;
-use cargo_deps::execute;
-use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::str::FromStr;
+
+use cargo_deps::{config::Config, execute};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
 const USAGE: &str = "\
 cargo-deps writes a graph in dot format to standard output.
