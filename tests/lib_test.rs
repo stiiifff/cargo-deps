@@ -2,7 +2,7 @@ extern crate cargo_deps;
 
 use cargo_deps::{get_dep_graph, render_dep_graph, Config};
 
-//Note: these are really just smoke tests to ensure we can use cargo-deps as a lib
+// Note: these are really just smoke tests to ensure we can use cargo-deps as a lib
 
 #[test]
 fn get_dep_graph_self() {
