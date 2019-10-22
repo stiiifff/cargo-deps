@@ -8,7 +8,7 @@ use std::str::FromStr;
 /// any command-line arguments.
 ///
 /// Please refer to the help menu for information about each option.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 #[allow(missing_docs)]
 pub struct Config {
     pub depth: Option<usize>,
@@ -16,6 +16,7 @@ pub struct Config {
     pub filter: Option<Vec<String>>,
     pub include_orphans: bool,
     pub include_versions: bool,
+    /// Default: "Cargo.toml".
     pub manifest_path: String,
     pub subgraph: Option<Vec<String>>,
     pub subgraph_name: Option<String>,
@@ -30,6 +31,27 @@ pub struct Config {
     pub optional_deps: bool,
     /// Default: true.
     pub transitive_deps: bool,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            depth: None,
+            dot_file: None,
+            filter: None,
+            include_orphans: false,
+            include_versions: false,
+            manifest_path: "Cargo.toml".into(),
+            subgraph: None,
+            subgraph_name: None,
+
+            regular_deps: true,
+            build_deps: false,
+            dev_deps: false,
+            optional_deps: false,
+            transitive_deps: true,
+        }
+    }
 }
 
 impl Config {
