@@ -19,10 +19,9 @@ mod util;
 pub use config::Config;
 pub use error::{Error, Result};
 
-use std::{io::BufWriter, path::Path};
-
 use graph::DepGraph;
 use project::Project;
+use std::{io::BufWriter, path::Path};
 
 /// Gets the full representation of the dependency graph, without converting it to graphviz output.
 ///

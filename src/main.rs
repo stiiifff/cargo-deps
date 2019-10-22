@@ -12,7 +12,7 @@ use std::{
     str::FromStr,
 };
 
-use cargo_deps::{get_dep_graph, render_dep_graph, Config};
+use cargo_deps::{get_dep_graph, render_dep_graph, Config, Result};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
 const USAGE: &str = "\
@@ -58,7 +58,7 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
                                                          The default is no limit'")
                         .validator(|v| usize::from_str(&v)
                                    .map(|_| ())
-                                   .map_err(|e| format!("{}: {}", v, e))
+                                   .map_err(|e| format!("'{}': {}", v, e))
                         ),
                     Arg::from_usage("--manifest-path [PATH] 'Specify location of manifest file'")
                         .default_value("Cargo.toml"),
@@ -70,24 +70,27 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
 }
 
 fn main() {
+    // Call the real entry point and handle any errors that occur.
+    real_main().unwrap_or_else(|e| e.exit());
+}
+
+fn real_main() -> Result<()> {
     let args = parse_cli();
 
-    if let Some(arg) = args.subcommand_matches("deps") {
-        let cfg = Config::from_matches(&arg).unwrap_or_else(|e| e.exit());
+    if let Some(args) = args.subcommand_matches("deps") {
+        let cfg = Config::from_matches(&args)?;
         let dot_file = cfg.dot_file.clone();
 
-        // Get dependency graph & render it
-        let out = get_dep_graph(cfg)
-            .and_then(render_dep_graph)
-            .map_err(|e| e.exit())
-            .unwrap();
+        // Get dependency graph & render it.
+        let out = get_dep_graph(cfg).and_then(render_dep_graph)?;
 
-        // Output to stdout or render the dot file
+        // Output to stdout or render the dot file.
         match dot_file {
             None => Box::new(io::stdout()) as Box<dyn Write>,
-            Some(file) => Box::new(File::create(&Path::new(&file)).expect("Failed to create file")),
+            Some(file) => Box::new(File::create(&Path::new(&file))?),
         }
-        .write_all(&out.into_bytes())
-        .expect("Unable to write graph");
+        .write_all(&out.into_bytes())?;
     }
+
+    Ok(())
 }
