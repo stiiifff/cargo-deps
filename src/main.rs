@@ -68,24 +68,24 @@ fn parse_cli<'a>() -> ArgMatches<'a> {
 }
 
 fn main() {
-    let m = parse_cli();
+    let args = parse_cli();
 
-    if let Some(m) = m.subcommand_matches("deps") {
-        let cfg = Config::from_matches(&m).unwrap_or_else(|e| e.exit());
+    if let Some(arg) = args.subcommand_matches("deps") {
+        let cfg = Config::from_matches(&arg).unwrap_or_else(|e| e.exit());
         let dot_file = cfg.dot_file.clone();
 
         // Get dependency graph & render it
-        let o = get_dep_graph(cfg)
-            .and_then(|g| render_dep_graph(g))
+        let out = get_dep_graph(cfg)
+            .and_then(render_dep_graph)
             .map_err(|e| e.exit())
             .unwrap();
 
-        // Output to stoud or render the dot file
+        // Output to stdout or render the dot file
         match dot_file {
             None => Box::new(io::stdout()) as Box<dyn Write>,
             Some(file) => Box::new(File::create(&Path::new(&file)).expect("Failed to create file")),
         }
-        .write_all(&o.into_bytes())
+        .write_all(&out.into_bytes())
         .expect("Unable to write graph");
     }
 }

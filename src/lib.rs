@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 mod config;
 mod dep;
 mod error;
@@ -29,12 +31,12 @@ pub fn get_dep_graph(cfg: Config) -> CliResult<DepGraph> {
 }
 
 pub fn render_dep_graph(graph: DepGraph) -> CliResult<String> {
-    let mut v: Vec<u8> = Vec::new();
-    let mut bw = BufWriter::new(&mut v);
-    graph.render_to(&mut bw)?;
-    drop(bw);
+    let mut bytes: Vec<u8> = Vec::new();
+    let mut writer = BufWriter::new(&mut bytes);
+    graph.render_to(&mut writer)?;
+    drop(writer);
 
-    String::from_utf8(v).map_err(|err| CliError::Generic(err.to_string()))
+    String::from_utf8(bytes).map_err(|err| CliError::Generic(err.to_string()))
 }
 
 // Check that the manifest file name is "Cargo.toml".
