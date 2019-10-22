@@ -2,7 +2,7 @@ use crate::error::CliResult;
 use clap::ArgMatches;
 use std::str::FromStr;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Config {
     pub depth: Option<usize>,
     pub dot_file: Option<String>,
