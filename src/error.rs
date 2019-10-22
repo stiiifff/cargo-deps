@@ -1,14 +1,14 @@
 use std::{
-    fmt::{Display, Formatter, Result as FmtResult},
+    fmt::{self, Display, Formatter},
     io,
 };
 
 /// Result type for the crate.
-pub type CliResult<T> = Result<T, CliError>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 /// Error type for the crate.
 #[derive(Debug)]
-pub enum CliError {
+pub enum Error {
     /// Errors originating from the toml crate.
     Toml(String),
     /// IO errors.
@@ -17,8 +17,8 @@ pub enum CliError {
     Generic(String),
 }
 
-impl Display for CliError {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match *self {
             Self::Generic(ref e) => write!(f, "{}", e),
             Self::Toml(ref e) => write!(f, "Could not parse toml file: {}", e),
@@ -27,7 +27,7 @@ impl Display for CliError {
     }
 }
 
-impl CliError {
+impl Error {
     /// Print this error and immediately exit the program.
     pub fn exit(&self) -> ! {
         eprintln!("error: {}", self);
@@ -35,13 +35,13 @@ impl CliError {
     }
 }
 
-impl From<io::Error> for CliError {
+impl From<io::Error> for Error {
     fn from(ioe: io::Error) -> Self {
         Self::Io(ioe)
     }
 }
 
-impl From<toml::de::Error> for CliError {
+impl From<toml::de::Error> for Error {
     fn from(err: toml::de::Error) -> Self {
         Self::Toml(format!("Could not parse input as TOML: {}", err))
     }

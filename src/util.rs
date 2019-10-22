@@ -1,4 +1,4 @@
-use crate::error::{CliError, CliResult};
+use crate::error::{Error, Result};
 use std::{
     env,
     fs::{self, File},
@@ -7,7 +7,7 @@ use std::{
 };
 use toml::{self, Value};
 
-pub fn toml_from_file<P: AsRef<Path>>(p: P) -> CliResult<Value> {
+pub fn toml_from_file<P: AsRef<Path>>(p: P) -> Result<Value> {
     let mut f = File::open(p.as_ref())?;
 
     let mut s = String::new();
@@ -17,7 +17,7 @@ pub fn toml_from_file<P: AsRef<Path>>(p: P) -> CliResult<Value> {
     Ok(toml)
 }
 
-pub fn find_manifest_file(file: &str) -> CliResult<PathBuf> {
+pub fn find_manifest_file(file: &str) -> Result<PathBuf> {
     let pwd = env::current_dir()?;
     let manifest = pwd.join(file);
     let file_name = manifest.file_name().unwrap();
@@ -48,7 +48,7 @@ pub fn find_manifest_file(file: &str) -> CliResult<PathBuf> {
 
         dir = match dir.parent() {
             None => {
-                return Err(CliError::Generic(format!(
+                return Err(Error::Generic(format!(
                     "Could not find {:?} in {:?} or any parent directory",
                     file,
                     manifest.parent().unwrap()

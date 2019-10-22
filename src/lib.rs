@@ -17,7 +17,7 @@ mod project;
 mod util;
 
 pub use config::Config;
-pub use error::{CliError, CliResult};
+pub use error::{Error, Result};
 
 use std::{io::BufWriter, path::Path};
 
@@ -27,7 +27,7 @@ use project::Project;
 /// Gets the full representation of the dependency graph, without converting it to graphviz output.
 ///
 /// Pass the result of this function to `render_dep_graph` for the graphviz string.
-pub fn get_dep_graph(cfg: Config) -> CliResult<DepGraph> {
+pub fn get_dep_graph(cfg: Config) -> Result<DepGraph> {
     // Search through parent dirs for Cargo.toml.
     is_cargo_toml(&cfg.manifest_path)?;
     let manifest_path = util::find_manifest_file(&cfg.manifest_path)?;
@@ -43,29 +43,27 @@ pub fn get_dep_graph(cfg: Config) -> CliResult<DepGraph> {
 }
 
 /// Converts the dependency graph representation into a graphviz string.
-pub fn render_dep_graph(graph: DepGraph) -> CliResult<String> {
+pub fn render_dep_graph(graph: DepGraph) -> Result<String> {
     let mut bytes: Vec<u8> = Vec::new();
     let mut writer = BufWriter::new(&mut bytes);
     graph.render_to(&mut writer)?;
     drop(writer);
 
-    String::from_utf8(bytes).map_err(|err| CliError::Generic(err.to_string()))
+    String::from_utf8(bytes).map_err(|err| Error::Generic(err.to_string()))
 }
 
 // Check that the manifest file name is "Cargo.toml".
-fn is_cargo_toml(file_name: &str) -> CliResult<()> {
+fn is_cargo_toml(file_name: &str) -> Result<()> {
     let path = Path::new(file_name);
 
     if let Some(file_name) = path.file_name() {
         if file_name != "Cargo.toml" {
-            return Err(CliError::Toml(
+            return Err(Error::Toml(
                 "The manifest-path must be a path to a Cargo.toml file".into(),
             ));
         }
     } else {
-        return Err(CliError::Toml(
-            "The manifest path is not a valid file".into(),
-        ));
+        return Err(Error::Toml("The manifest path is not a valid file".into()));
     }
 
     Ok(())

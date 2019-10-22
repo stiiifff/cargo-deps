@@ -1,4 +1,4 @@
-use crate::error::CliResult;
+use crate::error::Result;
 use clap::ArgMatches;
 use std::str::FromStr;
 
@@ -34,7 +34,7 @@ pub struct Config {
 
 impl Config {
     /// Creates a config object from command line arguments.
-    pub fn from_matches(m: &ArgMatches) -> CliResult<Self> {
+    pub fn from_matches(m: &ArgMatches) -> Result<Self> {
         let all_deps = m.is_present("all-deps");
 
         Ok(Self {

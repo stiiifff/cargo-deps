@@ -1,7 +1,7 @@
 use crate::{
     config::Config,
     dep::{DepKind, ResolvedDep},
-    error::{CliError, CliResult},
+    error::{Error, Result},
     project::RootDepsMap,
 };
 use std::{collections::HashMap, fmt, io::Write};
@@ -12,7 +12,7 @@ pub type Node = usize;
 pub struct Edge(pub Node, pub Node);
 
 impl Edge {
-    pub fn label<W: Write>(&self, w: &mut W, dg: &DepGraph) -> CliResult<()> {
+    pub fn label<W: Write>(&self, w: &mut W, dg: &DepGraph) -> Result<()> {
         use crate::dep::DepKind::{Build, Dev, Optional, Regular, Unknown};
 
         let parent = dg.get(self.0).unwrap();
@@ -35,7 +35,7 @@ impl Edge {
                     Unknown
                 }
             } else {
-                return Err(CliError::Generic(format!(
+                return Err(Error::Generic(format!(
                     "Crate '{}' is not a dependency of a root crate. This is probably a logic \
                      error.",
                     child.name
@@ -85,7 +85,7 @@ impl DepGraph {
     }
 
     /// Performs a topological sort on the edges.
-    pub fn topological_sort(&mut self) -> CliResult<()> {
+    pub fn topological_sort(&mut self) -> Result<()> {
         // Create a clone of the nodes list so we can remove parents and children without affecting
         // the original list. We work on the original list of edges, clearing it as we go, because
         // we construct a new one at the end, in topological order.
@@ -149,14 +149,12 @@ impl DepGraph {
 
             Ok(())
         } else {
-            Err(CliError::Generic(
-                "Cycle detected in dependency graph".into(),
-            ))
+            Err(Error::Generic("Cycle detected in dependency graph".into()))
         }
     }
 
     /// Sets the kind of each dependency based on how the dependencies are declared in the manifest.
-    pub fn set_resolved_kind(&mut self) -> CliResult<()> {
+    pub fn set_resolved_kind(&mut self) -> Result<()> {
         // Set regular kind for all root nodes.
         for node in self.nodes.iter_mut() {
             if self.root_deps_map.contains_key(&node.name) {
@@ -212,7 +210,7 @@ impl DepGraph {
                         }
                     }
                 } else {
-                    return Err(CliError::Generic(format!(
+                    return Err(Error::Generic(format!(
                         "Crate '{}' is not a dependency of a root crate. This is probably a logic \
                          error.",
                         child.name
@@ -326,7 +324,7 @@ impl DepGraph {
         self.nodes.len() - 1
     }
 
-    pub fn render_to<W: Write>(self, output: &mut W) -> CliResult<()> {
+    pub fn render_to<W: Write>(self, output: &mut W) -> Result<()> {
         // Keep track of all added nodes.
         let mut nodes_added = vec![];
 

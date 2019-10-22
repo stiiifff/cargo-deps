@@ -1,7 +1,7 @@
 use crate::{
     config::Config,
     dep::{DepKind, RootCrate},
-    error::{CliError, CliResult},
+    error::{Error, Result},
     graph::DepGraph,
     util,
 };
@@ -19,11 +19,11 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn with_config(cfg: Config) -> CliResult<Self> {
+    pub fn with_config(cfg: Config) -> Result<Self> {
         Ok(Self { cfg })
     }
 
-    pub fn graph(self, manifest_path: PathBuf, lock_path: PathBuf) -> CliResult<DepGraph> {
+    pub fn graph(self, manifest_path: PathBuf, lock_path: PathBuf) -> Result<DepGraph> {
         let (root_crates, root_deps_map) = self.parse_root_deps(&manifest_path)?;
 
         let mut dg = self.parse_lock_file(lock_path, &root_crates, root_deps_map)?;
@@ -45,7 +45,7 @@ impl Project {
     pub fn parse_root_deps(
         &self,
         manifest_path: &PathBuf,
-    ) -> CliResult<(Vec<RootCrate>, RootDepsMap)> {
+    ) -> Result<(Vec<RootCrate>, RootDepsMap)> {
         let manifest_toml = util::toml_from_file(manifest_path)?;
 
         // Get the name and version of the root project.
@@ -58,18 +58,16 @@ impl Project {
                         let (name, ver) = (name.to_string(), ver.to_string());
                         vec![(RootCrate { name, ver }, manifest_toml)]
                     } else {
-                        return Err(CliError::Toml(
+                        return Err(Error::Toml(
                             "No 'name' or 'version' fields in [package] table".into(),
                         ));
                     }
                 } else {
-                    return Err(CliError::Toml(
-                        "Could not parse [package] as a table".into(),
-                    ));
+                    return Err(Error::Toml("Could not parse [package] as a table".into()));
                 }
             } else {
                 // TODO: Check for workspace here.
-                return Err(CliError::Toml("No [package] table found".into()));
+                return Err(Error::Toml("No [package] table found".into()));
             }
         };
 
@@ -147,7 +145,7 @@ impl Project {
         lock_path: PathBuf,
         root_crates: &[RootCrate],
         root_deps_map: RootDepsMap,
-    ) -> CliResult<DepGraph> {
+    ) -> Result<DepGraph> {
         let lock_toml = util::toml_from_file(lock_path)?;
 
         let mut dg = DepGraph::new(self.cfg.clone());
@@ -164,15 +162,13 @@ impl Project {
 
             parse_package(&mut dg, root, root_crates)?;
         } else {
-            return Err(CliError::Toml(
-                "Missing [package] table in lock file".into(),
-            ));
+            return Err(Error::Toml("Missing [package] table in lock file".into()));
         }
 
         // Check that all root crates were found in the lock files.
         for &RootCrate { ref name, ref ver } in root_crates.iter() {
             if dg.find(&name, &ver).is_none() {
-                return Err(CliError::Toml(format!(
+                return Err(Error::Toml(format!(
                     "Missing 'name': {} and 'version': {} in lock file",
                     name, ver
                 )));
@@ -188,7 +184,7 @@ fn add_kind(dep_kinds_map: &mut DepKindsMap, key: String, kind: DepKind) {
     kinds.push(kind);
 }
 
-fn parse_package(dg: &mut DepGraph, pkg: &Value, root_crates: &[RootCrate]) -> CliResult<()> {
+fn parse_package(dg: &mut DepGraph, pkg: &Value, root_crates: &[RootCrate]) -> Result<()> {
     let name = pkg
         .get("name")
         .expect("No 'name' field in Cargo.lock [package] table")
@@ -220,7 +216,7 @@ fn parse_package(dg: &mut DepGraph, pkg: &Value, root_crates: &[RootCrate]) -> C
             .iter()
             .any(|root_crate| root_crate.name == name && root_crate.ver == ver)
         {
-            return Err(CliError::Generic(format!(
+            return Err(Error::Generic(format!(
                 "Version {} of root crate '{}' in Cargo.lock does not match version specified in \
                  Cargo.toml",
                 ver, name
