@@ -65,7 +65,7 @@ impl ResolvedDep {
     }
 
     pub fn label<W: Write>(&self, w: &mut W, dg: &DepGraph) -> Result<()> {
-        let name = if self.force_write_ver || dg.cfg.include_vers {
+        let name = if self.force_write_ver || dg.cfg.include_versions {
             format!("{} v{}", self.name, self.ver)
         } else {
             self.name.clone()

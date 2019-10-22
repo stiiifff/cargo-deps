@@ -1,3 +1,5 @@
+//! Entry point for the command line program.
+
 #![forbid(unsafe_code)]
 
 #[macro_use]

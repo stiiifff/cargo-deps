@@ -1,4 +1,13 @@
+//! This library is the backend for the `cargo-deps` command-line program, containing the actual
+//! logic.
+//!
+//! This library provides the following functionality:
+//!
+//! + Getting the dependency graph of a crate in its full intermediate representation.
+//! + Getting the final graphviz representation of a crate's dependencies.
+
 #![forbid(unsafe_code)]
+#![deny(missing_docs)]
 
 mod config;
 mod dep;
@@ -15,6 +24,9 @@ use std::{io::BufWriter, path::Path};
 use graph::DepGraph;
 use project::Project;
 
+/// Gets the full representation of the dependency graph, without converting it to graphviz output.
+///
+/// Pass the result of this function to `render_dep_graph` for the graphviz string.
 pub fn get_dep_graph(cfg: Config) -> CliResult<DepGraph> {
     // Search through parent dirs for Cargo.toml.
     is_cargo_toml(&cfg.manifest_path)?;
@@ -30,6 +42,7 @@ pub fn get_dep_graph(cfg: Config) -> CliResult<DepGraph> {
     project.graph(manifest_path, lock_path)
 }
 
+/// Converts the dependency graph representation into a graphviz string.
 pub fn render_dep_graph(graph: DepGraph) -> CliResult<String> {
     let mut bytes: Vec<u8> = Vec::new();
     let mut writer = BufWriter::new(&mut bytes);

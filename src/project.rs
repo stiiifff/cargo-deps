@@ -34,7 +34,7 @@ impl Project {
         // Set the kind of dependency on each dep.
         dg.set_resolved_kind()?;
 
-        if !self.cfg.include_vers {
+        if !self.cfg.include_versions {
             dg.show_version_on_duplicates();
         }
 

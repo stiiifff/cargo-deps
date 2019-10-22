@@ -3,12 +3,17 @@ use std::{
     io,
 };
 
+/// Result type for the crate.
 pub type CliResult<T> = Result<T, CliError>;
 
+/// Error type for the crate.
 #[derive(Debug)]
 pub enum CliError {
+    /// Errors originating from the toml crate.
     Toml(String),
+    /// IO errors.
     Io(io::Error),
+    /// All other errors.
     Generic(String),
 }
 

@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.com/m-cat/cargo-deps.svg?branch=master)](https://travis-ci.com/m-cat/cargo-deps)
 [![crates.io](https://img.shields.io/crates/v/cargo-deps.svg)](https://crates.io/crates/cargo-deps)
+[![Documentation](https://docs.rs/cargo-deps/badge.svg)](https://docs.rs/cargo-deps)
 [![unsafe forbidden](https://img.shields.io/badge/unsafe-forbidden-success.svg)](https://github.com/rust-secure-code/safety-dance/)
 [![Downloads](https://img.shields.io/crates/d/cargo-deps.svg)](https://crates.io/crates/cargo-deps)
 [![Issues](https://img.shields.io/github/issues-raw/m-cat/cargo-deps.svg)](https://github.com/m-cat/cargo-deps/issues)
