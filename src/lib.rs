@@ -28,13 +28,14 @@ use std::{io::BufWriter, path::Path};
 /// Pass the result of this function to `render_dep_graph` for the graphviz string.
 pub fn get_dep_graph(cfg: Config) -> Result<DepGraph> {
     // Search through parent dirs for Cargo.toml.
-    is_cargo_toml(&cfg.manifest_path)?;
-    let manifest_path = util::find_manifest_file(&cfg.manifest_path)?;
+    let manifest_path = &cfg.manifest_path;
+    is_cargo_toml(manifest_path)?;
+    let manifest_path = util::find_file_search_parent_dirs(manifest_path)?;
 
     // Cargo.lock must be in the same directory as Cargo.toml or in a parent directory.
     let manifest = manifest_path.to_str().unwrap();
     let lock_file = format!("{}.lock", &manifest[0..manifest.len() - 5]);
-    let lock_path = util::find_manifest_file(&lock_file)?;
+    let lock_path = util::find_file_search_parent_dirs(&lock_file)?;
 
     // Graph the project.
     let project = Project::with_config(cfg)?;
