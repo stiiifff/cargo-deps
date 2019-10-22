@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0]
+
+- Extract main logic into separate library.
+- Add two functions to external API: `get_dep_graph` and `render_dep_graph`
+- Enable colored help
+- Forbid unsafe code and add badge
+- Fix bugs with Cargo.toml detection
+
 ## [1.1.1]
 
 - Update help output.
